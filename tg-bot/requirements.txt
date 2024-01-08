@@ -1,0 +1,6 @@
+aiogram==3.0.0b7
+requests==2.26.0
+uuid
+loguru==0.6.0
+python-dotenv==1.0.0
+emoji

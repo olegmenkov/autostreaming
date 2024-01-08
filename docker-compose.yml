@@ -1,0 +1,22 @@
+version: "3.3"
+services:
+  obs:
+    build: obs-api/.
+    ports:
+      - '8000:8000'
+    network_mode: "host"
+    env_file:
+      - .env
+    restart: always
+  redis:
+    image: "redis:latest"
+    ports:
+      - '6379:6379'
+    network_mode: "host"
+    restart: always
+  tg:
+    build: tg-bot/.
+    network_mode: "host"
+    env_file:
+      - .env
+    restart: always
