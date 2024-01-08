@@ -912,7 +912,7 @@ async def process_stop_stream(message: Message, state: FSMContext) -> None:
     logger.info('Received OBS name')
     purpose = 'остановить стрим на стенде '+obs_name
     await show_yes_no_keyboard(message, state, purpose)
-    await state.set_state(Form.stop_recording_confirmed)
+    await state.set_state(Form.stop_stream_confirmed)
 
 
 @router.message(Form.stop_stream_confirmed)
