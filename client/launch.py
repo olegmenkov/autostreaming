@@ -116,7 +116,7 @@ def create_config():
         json.dump(config, f)
 
 
-# start()
-test()
+start()
+# test()
 create_config()
 create_client_script()
