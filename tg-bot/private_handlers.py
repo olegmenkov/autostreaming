@@ -84,7 +84,7 @@ async def send_data_to_calendar(message, state):
             "key_obs": stream_data['key'],
             "name": stream_data['name'], "ip_obs": stream_data['ip'], "port_obs": stream_data['port'],
             "password_obs": stream_data['password']}
-    url = "https://crm.auditory.ru/telegram/calendar/create"
+    url = "https://crm.miem.tv/telegram/calendar/create"
     response = requests.post(url, json=body)
     logger.info(f'Sent {str(body)} and received {str(response.status_code)}')
 
