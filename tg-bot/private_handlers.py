@@ -80,13 +80,30 @@ class Form(StatesGroup):
 async def send_data_to_calendar(message, state):
     stream_data = await state.get_data()
     # отправляем запрос в календарь:
-    body = {"params" :{"start": stream_data['date1'], "stop": stream_data['date2'], "YT_server": stream_data['youtube_server'],
-            "key_obs": stream_data['key'],
-            "name": stream_data['name'], "ip_obs": stream_data['ip'], "port_obs": stream_data['port'],
-            "password_obs": stream_data['password']}}
+    def create_params(stream_data):
+    return {
+        key: stream_data[key] for key in stream_data
+        }
+    
+    stream_data = {
+        "start": stream_data['date1'],
+        "stop": stream_data['date2'],
+        "YT_server": stream_data['youtube_server'],
+        "key_obs": stream_data['key'],
+        "name": stream_data['name'],
+        "ip_obs": stream_data['ip'],
+        "port_obs": stream_data['port'],
+        "password_obs": stream_data['password'],
+    }
+    params = create_params(stream_data)
+   
+    # body = {"params" :{"start": stream_data['date1'], "stop": stream_data['date2'], "YT_server": stream_data['youtube_server'],
+    #         "key_obs": stream_data['key'],
+    #         "name": stream_data['name'], "ip_obs": stream_data['ip'], "port_obs": stream_data['port'],
+    #         "password_obs": stream_data['password']}}
     url = "https://crm.miem.tv/telegram/calendar/create"
-    response = requests.post(url, json = body)
-    logger.info(f'Sent {str(body)} and received {str(response.status_code)}')
+    response = requests.post(url, json = params)
+    logger.info(f'Sent {str(params)} and received {str(response.status_code)}')
 
     if response.status_code == 200:
         data = response.json()['result']
