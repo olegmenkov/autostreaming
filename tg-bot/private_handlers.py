@@ -96,10 +96,7 @@ async def send_data_to_calendar(message, state):
         "password_obs": stream_data['password'],
     }
     params = create_params(stream_data)
-    # body = {"params" :{"start": stream_data['date1'], "stop": stream_data['date2'], "YT_server": stream_data['youtube_server'],
-    #         "key_obs": stream_data['key'],
-    #         "name": stream_data['name'], "ip_obs": stream_data['ip'], "port_obs": stream_data['port'],
-    #         "password_obs": stream_data['password']}}
+    logger.info(f'Sent {str('New')})
     url = "https://crm.miem.tv/telegram/calendar/create"
     response = requests.post(url, json=params)
     logger.info(f'Sent {str(params)} and received {str(response.status_code)}')
