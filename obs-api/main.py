@@ -410,7 +410,7 @@ async def start_stream_calendar(calendar_data: CalendarData):
     :return:
     """
     obsclient = config_obsclient_calendar(calendar_data)
-    await stop_stream(obsclient)
+    await stop_youtube_stream(obsclient)
     await set_stream_parameters(obsclient,
                                 calendar_data.stream_key,
                                 calendar_data.youtube_server)
