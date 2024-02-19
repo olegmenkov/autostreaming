@@ -4,26 +4,29 @@ from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from loguru import logger
 
-from database import RedisDatabase
+# from cryptography.fernet import Fernet
+from conductor import Conductor
+# from database import RedisDatabase
+from db_class import Database
 from obs_functions import start_youtube_stream, set_stream_parameters, start_recording
 from obs_functions import stop_youtube_stream, ping_stream, stream_time, ping_recording, \
     recording_time, stop_recording, ping_obs, get_scenes, set_scene
+from schemas import UserId, CalendarData, CalendarDataStop
 from schemas import UsersAddObs, UserDelObs, UsersEditObs, CheckObs, StartStreamModel, \
     StopStreamModel, StartRecordingModel, StopRecordingModel, UserPingStreamObs, PlanStreamModel, UserObs, \
     GetScenesModel, SetSceneModel, AddGroup, AddGroupMember, DeleteGroupMember, AddGroupObs, \
     EditGroupObs, DeleteGroupObs, CheckGroupObs, CheckObsGroups
-from schemas import UserId, GetScheduleModel, CalendarData, CalendarDataStop
-from utils import config_obsclient_calendar
-from cryptography.fernet import Fernet
+from utils import config_obsclient_calendar, DB_CONFIG
 
-
-db = RedisDatabase()
+db = Database(**DB_CONFIG)
+# new_db = Database(**DB_CONFIG)
 app = FastAPI()
+conductor = Conductor(db)
 
 
-@app.get('/show_bd')
-async def show_bd(user_id: UserId):
-    return JSONResponse(content=db.show_bd())
+# @app.get('/show_bd')
+# async def show_bd(user_id: UserId):
+#     return JSONResponse(content=db.show_bd())
 
 
 @app.post('/register_user')
@@ -36,7 +39,7 @@ async def register_user(user_id: UserId):
     :return:
     """
     logger.info('Register user')
-    db.create_user_in_db(user_id.user_id)
+    await conductor.create_user_in_db(user_id.user_id)
     logger.info(f'Added user {user_id.user_id} to database')
     return JSONResponse(content={'user_id': user_id.user_id})
 
@@ -51,7 +54,7 @@ async def start_stream(request_body: StartStreamModel):
     :param request_body:
     :return:
     """
-    obsclient = db.get_obs_client(request_body.user_id, request_body.obs_name)
+    obsclient = await conductor.get_obs_client(request_body.user_id, request_body.obs_name)
     flag = await ping_obs(obsclient)
     if not flag:
         return JSONResponse(status_code=409,
@@ -80,7 +83,7 @@ async def stop_stream(request_body: StopStreamModel):
     :return:
     """
     logger.info('Stopping stream')
-    obsclient = db.get_obs_client(request_body.user_id, request_body.obs_name)
+    obsclient = await conductor.get_obs_client(request_body.user_id, request_body.obs_name)
 
     flag = await ping_obs(obsclient)
     if not flag:
@@ -105,7 +108,7 @@ async def start_recording_handler(request_body: StartRecordingModel):
     :param request_body:
     :return:
     """
-    obsclient = db.get_obs_client(request_body.user_id, request_body.obs_name)
+    obsclient = await conductor.get_obs_client(request_body.user_id, request_body.obs_name)
     if not await ping_obs(obsclient):
         return JSONResponse(status_code=409,
                             content='Obs stand is unavailable')
@@ -130,7 +133,7 @@ async def stop_recording_handler(request_body: StopRecordingModel):
     :param request_body:
     :return:
     """
-    obsclient = db.get_obs_client(request_body.user_id, request_body.obs_name)
+    obsclient = await conductor.get_obs_client(request_body.user_id, request_body.obs_name)
     if not await ping_obs(obsclient):
         return JSONResponse(status_code=409,
                             content='Obs stand is unavailable')
@@ -147,12 +150,12 @@ async def stop_recording_handler(request_body: StopRecordingModel):
 
 
 @app.get('/ping_redis')
-def ping_redis():
+async def ping_redis():
     """
     Endpoint для проверки, работает ли база данных
     :return:
     """
-    if db.ping_db():
+    if await conductor.ping_db():
         return {'database': 'OK!'}
     return {'database': 'Not available'}
 
@@ -169,8 +172,8 @@ async def ping():
 @app.post('/add_obs')
 async def add_obs(request_body: UsersAddObs):
     logger.info('Adding users obs stand')
-    db.add_users_obs(request_body.user_id, request_body.obs_name,
-                     request_body.ip, request_body.port, request_body.password)
+    await conductor.add_users_obs(request_body.user_id, request_body.obs_name,
+                                  request_body.ip, request_body.port, request_body.password)
     logger.info(f'Added obs with ip {request_body.ip} for {request_body.user_id} in database')
     return JSONResponse(content={'text': 'Operation succeed'})
 
@@ -178,8 +181,8 @@ async def add_obs(request_body: UsersAddObs):
 @app.post('/edit_obs')
 async def edit_obs(request_body: UsersEditObs):
     logger.info('Editing users obs stand')
-    db.edit_users_obs(request_body.user_id, request_body.obs_name,
-                     request_body.field_to_change, request_body.new_value)
+    await conductor.edit_users_obs(request_body.user_id, request_body.obs_name,
+                                   request_body.field_to_change, request_body.new_value)
     logger.info(f'Changed {request_body.field_to_change} for obs {request_body.obs_name}')
     return JSONResponse(content={'text': 'Operation succeed'})
 
@@ -187,7 +190,8 @@ async def edit_obs(request_body: UsersEditObs):
 @app.post('/edit_group_obs')
 async def edit_group_obs(request_body: EditGroupObs):
     logger.info('Editing group obs stand')
-    db.edit_groups_obs(request_body.group_id, request_body.obs_name, request_body.field_to_change, request_body.new_value)
+    await conductor.edit_groups_obs(request_body.group_id, request_body.obs_name, request_body.field_to_change,
+                                    request_body.new_value)
     logger.info(f'Changed {request_body.field_to_change} for obs {request_body.obs_name}')
     return JSONResponse(content={'text': 'Operation succeed'})
 
@@ -195,7 +199,7 @@ async def edit_group_obs(request_body: EditGroupObs):
 @app.post('/raise_to_admin')
 async def raise_to_admin(request_body: DeleteGroupMember):
     logger.info('Raising user to admins')
-    db.raise_to_admin(request_body.user_id, request_body.group_id)
+    await conductor.raise_to_admin(request_body.user_id, request_body.group_id)
     logger.info(f'Raised user {request_body.user_id} to admin in group {request_body.group_id}')
     return JSONResponse(content={'text': 'Operation succeed'})
 
@@ -203,7 +207,7 @@ async def raise_to_admin(request_body: DeleteGroupMember):
 @app.post('/remove_from_admins')
 async def raise_to_admin(request_body: DeleteGroupMember):
     logger.info('Removing user from admins')
-    db.remove_from_admins(request_body.user_id, request_body.group_id)
+    await conductor.remove_from_admins(request_body.user_id, request_body.group_id)
     logger.info(f'Removed user {request_body.user_id} from admins in group {request_body.group_id}')
     return JSONResponse(content={'text': 'Operation succeed'})
 
@@ -211,7 +215,7 @@ async def raise_to_admin(request_body: DeleteGroupMember):
 @app.delete('/delete_obs')
 async def delete_obs(request_body: UserDelObs):
     logger.info('Deleting users obs stand')
-    db.del_users_obs(request_body.user_id, request_body.obs_name)
+    await conductor.del_users_obs(request_body.user_id, request_body.obs_name)
     logger.info(f'Deleted obs with ip {request_body.obs_name} for user {request_body.user_id} in database')
     return JSONResponse(content={'text': 'Operation succeed'})
 
@@ -219,27 +223,28 @@ async def delete_obs(request_body: UserDelObs):
 @app.delete('/delete_group_obs')
 async def delete_groups_obs(request_body: DeleteGroupObs):
     logger.info('Deleting obs stand')
-    deleted_obs_ip = db.del_groups_obs(request_body.group_id, request_body.obs_name)
+    deleted_obs_ip = await conductor.del_groups_obs(request_body.group_id, request_body.obs_name)
     logger.info(f'Deleted obs with ip {deleted_obs_ip} for group {request_body.group_id} in database')
     return JSONResponse(content={'text': 'Operation succeed'})
 
 
 @app.get('/check_obs')
 async def check_obs(request_body: CheckObs):
-    added_obs = db.get_users_obs(request_body.user_id)
+    added_obs = await conductor.get_users_obs(request_body.user_id)
     need_availability = request_body.need_availability
-    resp = dict()   # словарь {'имя обс': {параметры}, 'имя обс-2': {параметры-2}, ...}
+    resp = dict()  # словарь {'имя обс': {параметры}, 'имя обс-2': {параметры-2}, ...}
     for obs in added_obs:
         name = obs[0]
         ip = obs[1]
         port = obs[2]
-        obsclient = db.get_obs_client(request_body.user_id, name)
-        if need_availability:   # для доступных ОБС также смотрим, идёт ли на них стрим и запись
+        obsclient = await conductor.get_obs_client(request_body.user_id, name)
+        if need_availability:  # для доступных ОБС также смотрим, идёт ли на них стрим и запись
             availability = await ping_obs(obsclient)
             if availability:
                 stream_status = await ping_stream(obsclient)
                 recording_status = await ping_recording(obsclient)
-                resp[name] = {'ip': ip, 'port': port, 'availability': availability, "stream_status": stream_status, "recording_status": recording_status}
+                resp[name] = {'ip': ip, 'port': port, 'availability': availability, "stream_status": stream_status,
+                              "recording_status": recording_status}
             else:
                 resp[name] = {'ip': ip, 'port': port, 'availability': availability}
         else:
@@ -250,8 +255,8 @@ async def check_obs(request_body: CheckObs):
 
 @app.get('/check_group_obs')
 async def check_group_obs(request_body: CheckGroupObs):
-    added_obs = db.get_groups_obs(request_body.group_id)
-    content = dict()   # словарь {'имя обс': {параметры}, 'имя обс-2': {параметры-2}, ...}
+    added_obs = await conductor.get_groups_obs(request_body.group_id)
+    content = dict()  # словарь {'имя обс': {параметры}, 'имя обс-2': {параметры-2}, ...}
     for obs in added_obs:
         obs_name = obs[0]
         ip = obs[1]
@@ -274,7 +279,7 @@ async def add_group(request_body: AddGroup):
     Добавляет в БД новую группу
     """
     logger.info('Adding group')
-    db.create_group_in_db(request_body.group_id)
+    await conductor.create_group_in_db(request_body.group_id)
     logger.info(f'Added group {request_body.group_id} to database')
     return JSONResponse(content={'group_id': request_body.group_id})
 
@@ -285,7 +290,7 @@ async def add_group_member(request_body: AddGroupMember):
     Добавляет в БД нового участника группы
     """
     logger.info('Adding group member')
-    db.add_groups_user(request_body.group_id, request_body.user_id, request_body.is_admin)
+    await conductor.add_groups_user(request_body.group_id, request_body.user_id, request_body.is_admin)
     logger.info(f'Added member {request_body.user_id} to group {request_body.group_id}')
     return JSONResponse(content={'group_id': request_body.group_id})
 
@@ -295,7 +300,7 @@ async def delete_group_member(request_body: DeleteGroupMember):
     """
     Удаляет участника из группы
     """
-    db.del_group_user(request_body.group_id, request_body.user_id)
+    await conductor.del_group_user(request_body.group_id, request_body.user_id)
     logger.info(f'Deleting member {request_body.user_id} from group {request_body.group_id}')
     return JSONResponse(content={'group_id': request_body.group_id})
 
@@ -303,8 +308,8 @@ async def delete_group_member(request_body: DeleteGroupMember):
 @app.post('/add_obs')
 async def add_obs(request_body: UsersAddObs):
     logger.info('Adding users obs stand')
-    db.add_users_obs(request_body.user_id, request_body.obs_name,
-                     request_body.ip, request_body.port, request_body.password)
+    await conductor.add_users_obs(request_body.user_id, request_body.obs_name,
+                                  request_body.ip, request_body.port, request_body.password)
     logger.info(f'Added obs with ip {request_body.ip} for {request_body.user_id} in database')
     return JSONResponse(content={'text': 'Operation succeed'})
 
@@ -314,7 +319,7 @@ async def add_group_obs(request_body: AddGroupObs):
     content = {"added": [], "missed": []}
     for obs_name in request_body.obs_names:
         # Если ОБС найдена и добавлена, то added=True
-        added = db.add_groups_obs(request_body.group_id, request_body.admin_id, obs_name)
+        added = await conductor.add_groups_obs(request_body.group_id, request_body.admin_id, obs_name)
         if added:
             content["added"].append(obs_name)
         else:
@@ -324,7 +329,7 @@ async def add_group_obs(request_body: AddGroupObs):
 
 @app.get('/ping_obs')
 async def ping_obs_handler(request_body: UserPingStreamObs):
-    obs_client = db.get_obs_client(request_body.user_id, request_body.obs_name)
+    obs_client = await conductor.get_obs_client(request_body.user_id, request_body.obs_name)
     if await ping_obs(obs_client):
         return JSONResponse(content={'text': 'Obs stand is available'})
     return JSONResponse(status_code=451,
@@ -337,7 +342,7 @@ async def ping_stream_handler(request_body: UserPingStreamObs):
     Endpoint для проверки, работает ли стрим
     :return:
     """
-    obs_client = db.get_obs_client(request_body.user_id, request_body.obs_name)
+    obs_client = await conductor.get_obs_client(request_body.user_id, request_body.obs_name)
     if await ping_obs(obs_client):
         if await ping_stream(obs_client):
             time = str(await stream_time(obs_client))
@@ -355,7 +360,7 @@ async def ping_recording_handler(request_body: UserPingStreamObs):
     Endpoint для проверки, работает ли запись
     :return:
     """
-    obs_client = db.get_obs_client(request_body.user_id, request_body.obs_name)
+    obs_client = await conductor.get_obs_client(request_body.user_id, request_body.obs_name)
     if await ping_obs(obs_client):
         if await ping_recording(obs_client):
             time = str(await recording_time(obs_client))
@@ -374,9 +379,9 @@ async def plan_stream(request_body: PlanStreamModel):
                                                 "%Y-%m-%d %H:%M:%S")
     interval_end = datetime.datetime.strptime(request_body.date2,
                                               "%Y-%m-%d %H:%M:%S")
-    interval = db.create_planned_stream(request_body.user_id, request_body.key,
-                                        interval_begin, interval_end,
-                                        request_body.obs_name)
+    interval = await conductor.create_planned_stream(request_body.user_id, request_body.key,
+                                                     interval_begin, interval_end,
+                                                     request_body.obs_name)
     return JSONResponse(content={'text': f'Stream successfully planned in '
                                          f'interval {interval[0]} - '
                                          f'{interval[1]}'})
@@ -456,7 +461,7 @@ async def set_scene_handler(request_body: SetSceneModel):
     :param request_body:
     :return:
     """
-    obsclient = db.get_obs_client(request_body.user_id, request_body.obs_name)
+    obsclient = await conductor.get_obs_client(request_body.user_id, request_body.obs_name)
     if not await ping_obs(obsclient):
         return JSONResponse(status_code=409,
                             content='Obs stand is unavailable')
@@ -480,7 +485,7 @@ async def get_scenes_handler(request_body: GetScenesModel):
     :param request_body:
     :return:
     """
-    obsclient = db.get_obs_client(request_body.user_id, request_body.obs_name)
+    obsclient = await conductor.get_obs_client(request_body.user_id, request_body.obs_name)
     if not await ping_obs(obsclient):
         return JSONResponse(status_code=409,
                             content='Obs stand is unavailable')
