@@ -216,19 +216,24 @@ class Database:
         # Handle updating OBS name separately
         if field_to_change == 'obs_name':
             query = text("""
-                UPDATE user_obs_info 
-                SET obs_name = :new_value 
-                WHERE user_id = :user_id AND obs_name = :obs_name
+                UPDATE users_obs 
+                SET "UO_name" = :new_value 
+                WHERE user_id = :user_id AND "UO_name" = :obs_name
             """)
-            await self.execute(query, {'user_id': user_id, 'obs_name': obs_name, 'new_value': new_value})
+            await self.execute(query, {'user_id': int(user_id), 'obs_name': obs_name, 'new_value': new_value})
         elif field_to_change in {'ip', 'port', 'password'}:
+            field_in_db_mapping = {'ip': "OBS_ip", 'port': "OBS_port", 'password': "OBS_pswd"}
+            field_in_db = field_in_db_mapping[field_to_change]
+            if field_to_change == "port":
+                new_value = int(new_value)
             # Update other fields directly
             query = text(f"""
-                UPDATE user_obs_info 
-                SET {field_to_change} = :new_value 
-                WHERE user_id = :user_id AND obs_name = :obs_name
+            WITH temp as (SELECT "OBS_id" FROM users_obs WHERE user_id = :user_id AND "UO_name" = :obs_name)
+                UPDATE obs 
+                SET "{field_in_db}" = :new_value 
+                WHERE "OBS_id" IN (SELECT "OBS_id" FROM temp);
             """)
-            await self.execute(query, {'user_id': user_id, 'obs_name': obs_name, 'new_value': new_value})
+            await self.execute(query, {'user_id': int(user_id), 'obs_name': obs_name, 'new_value': new_value})
         else:
             raise HTTPException(status_code=400, detail=f'No such field as {field_to_change}')
 

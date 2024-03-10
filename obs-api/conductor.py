@@ -203,7 +203,7 @@ class Conductor:
         # Encrypt the password if the field being changed is 'password'
         if field_to_change == 'password':
             new_value = encrypt_password(new_value)  # Assuming encrypt_password is defined in Conductor
-
+        await self.db.edit_users_obs(user_id, obs_name, field_to_change, new_value)
         try:
             await self.db.edit_users_obs(user_id, obs_name, field_to_change, new_value)
         except HTTPException as e:
