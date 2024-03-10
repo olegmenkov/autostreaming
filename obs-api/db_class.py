@@ -83,9 +83,9 @@ class Database:
         await self.execute(query, {'group_id': group_id})
 
     async def check_user_in_db(self, user_id: str) -> bool:
-        query = text("SELECT EXISTS(SELECT 1 FROM users WHERE U_id = :user_id)")
+        query = text('SELECT EXISTS(SELECT 1 FROM users WHERE "U_id" = :user_id)')
         result = await self.execute(query, {'user_id': user_id})
-        return await result.scalar()
+        return result.scalar()
 
     async def check_group_in_db(self, group_id: str) -> bool:
         query = text("SELECT EXISTS(SELECT 1 FROM groups WHERE group_id = :group_id)")
@@ -94,12 +94,12 @@ class Database:
 
     async def get_obs_info(self, user_id: str, obs_name: str):
         query = text("""
-            SELECT ip, port, password 
-            FROM obs_info 
-            WHERE user_id = :user_id AND obs_name = :obs_name
+            SELECT "OBS_ip", "OBS_port", "OBS_pswd" 
+            FROM obs INNER JOIN users_obs USING("OBS_id")
+            WHERE user_id = :user_id AND "UO_name" = :obs_name
         """)
-        result = await self.execute(query, {'user_id': user_id, 'obs_name': obs_name})
-        return await result.fetchone()
+        result = await self.execute(query, {'user_id': int(user_id), 'obs_name': obs_name})
+        return result.fetchone()
 
     async def get_group_obs_info(self, group_id: str, obs_name: str):
         query = text("""
@@ -122,21 +122,30 @@ class Database:
     async def add_users_obs(self, user_id: str, obs_name: str, ip: str, port: str, encrypted_password: str):
         # Check for duplicates
         check_query = text("""
-            SELECT 1 FROM user_obs_info 
-            WHERE user_id = :user_id AND (obs_name = :obs_name OR (ip = :ip AND port = :port))
+            SELECT 1
+            FROM users_obs us INNER JOIN obs ob ON ob."OBS_id" = us."OBS_id"
+            WHERE us.user_id = :user_id AND (us."UO_name" = :obs_name OR (ob."OBS_ip" = :ip AND ob."OBS_port" = :port))
         """)
-        result = await self.execute(check_query, {'user_id': user_id, 'obs_name': obs_name, 'ip': ip, 'port': port})
-        exists = await result.scalar()
+        result = await self.execute(check_query, {'user_id': int(user_id), 'obs_name': obs_name, 'ip': ip, 'port': int(port)})
+        exists = result.scalar()
 
         if exists:
             raise HTTPException(status_code=409, detail=f'Duplicated stand. Stand with ip {ip} and port {port} or name {obs_name} already exists')
 
+        obs_id = uuid.uuid4()
         # Insert new OBS info
         insert_query = text("""
-            INSERT INTO user_obs_info (user_id, obs_name, ip, port, encrypted_password) 
-            VALUES (:user_id, :obs_name, :ip, :port, :encrypted_password)
+            INSERT INTO users_obs (user_id, "OBS_id", "UO_name", "UO_access_grant") 
+            VALUES (:user_id, :obs_id, :obs_name, :grant);
         """)
-        await self.execute(insert_query, {'user_id': user_id, 'obs_name': obs_name, 'ip': ip, 'port': port, 'encrypted_password': encrypted_password})
+        await self.execute(insert_query, {'user_id': int(user_id), 'obs_id': str(obs_id), 'obs_name': obs_name, 'grant': True})
+        # Insert new OBS info
+        insert_query = text("""
+            INSERT INTO obs ("OBS_id", "OBS_ip", "OBS_port", "OBS_pswd")
+            VALUES (:obs_id, :ip, :port, :encrypted_password);
+        """)
+        await self.execute(insert_query, {'obs_id': str(obs_id), 'ip': ip, 'port': int(port), 'encrypted_password': encrypted_password})
+
 
     async def add_groups_obs(self, group_id: str, admin_id: str, obs_name: str, ip: str, port: str, encrypted_password: str):
         # Check for duplicate OBS in the group
@@ -278,22 +287,22 @@ class Database:
     async def delete_users_obs(self, user_id: str, obs_name: str) -> str:
         # First, get the IP of the OBS to be deleted for return value
         get_ip_query = text("""
-            SELECT OBS_ip FROM user_obs_info
-            JOIN obs ON user_obs_info.OBS_id = obs.OBS_id
-            WHERE user_id = :user_id AND UO_name = :obs_name
+            SELECT obs."OBS_ip", obs."OBS_id"
+            FROM users_obs INNER JOIN obs ON users_obs."OBS_id" = obs."OBS_id"
+            WHERE user_id = :user_id AND "UO_name" = :obs_name
         """)
-        result = await self.execute(get_ip_query, {'user_id': user_id, 'obs_name': obs_name})
-        obs_ip = await result.scalar()
-
-        if not obs_ip:
+        result = await self.execute(get_ip_query, {'user_id': int(user_id), 'obs_name': obs_name})
+        res = result.fetchall()
+        if not res:
             raise HTTPException(status_code=404, detail='OBS with this name not found')
+        obs_ip, obs_id = res[0]
 
         # Delete the OBS stand
         delete_query = text("""
-            DELETE FROM user_obs_info 
-            WHERE user_id = :user_id AND UO_name = :obs_name
+            DELETE FROM users_obs 
+            WHERE user_id = :user_id AND "UO_name" = :obs_name
         """)
-        await self.execute(delete_query, {'user_id': user_id, 'obs_name': obs_name})
+        await self.execute(delete_query, {'user_id': int(user_id), 'obs_name': obs_name})
 
         return obs_ip
 
@@ -327,13 +336,13 @@ class Database:
 
     async def get_users_obs(self, user_id: str) -> List[List[Any]]:
         query = text("""
-            SELECT UO_name, OBS.OBS_ip, OBS.OBS_port
-            FROM user_obs_info
-            JOIN obs ON user_obs_info.OBS_id = obs.OBS_id
-            WHERE user_id = :user_id
+            SELECT us."UO_name", ob."OBS_ip", ob."OBS_port"
+            FROM users_obs us INNER JOIN obs ob ON us."OBS_id" = ob."OBS_id"
+            WHERE us.user_id = :user_id
         """)
-        result = await self.execute(query, {'user_id': user_id})
-        return [[row['UO_name'], row['OBS_ip'], row['OBS_port']] for row in await result.fetchall()]
+        result = await self.execute(query, {'user_id': int(user_id)})
+        res = [[row[0], row[1], row[2]] for row in result.fetchall()]
+        return res
 
     async def get_groups_obs(self, group_id: str) -> List[List[Any]]:
         query = text("""

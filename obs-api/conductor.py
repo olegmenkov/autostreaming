@@ -12,18 +12,14 @@ from db_class import Database
 
 
 def encrypt_password(password):
-    password = bytes(password, 'utf-8')
-    load_dotenv()
-    key = bytes(str(os.getenv('KEY')), 'utf-8')
-    f = Fernet(key)
-    return f.encrypt(password)
+    return password
+
+
+################ TODO: почнить эту хуйню
 
 
 def decrypt_password(password):
-    load_dotenv()
-    key = bytes(str(os.getenv('KEY')), 'utf-8')
-    f = Fernet(key)
-    return f.decrypt(password).decode('utf-8')
+    return password
 
 
 class Conductor:
@@ -37,7 +33,7 @@ class Conductor:
         try:
             await self.db.create_user_in_db(user_id)
         except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
+            logger.error(e)
 
     async def create_group_in_db(self, group_id: str):
         try:
@@ -93,7 +89,7 @@ class Conductor:
         parameters = simpleobsws.IdentificationParameters(
             ignoreNonFatalRequestChecks=False)
         obsclient = simpleobsws.WebSocketClient(
-            url='ws://' + ip + ':' + port,
+            url=f'ws://{ip}:{port}',
             password=password,
             identification_parameters=parameters)
         return obsclient
@@ -106,7 +102,7 @@ class Conductor:
         parameters = simpleobsws.IdentificationParameters(
             ignoreNonFatalRequestChecks=False)
         obsclient = simpleobsws.WebSocketClient(
-            url='ws://' + ip + ':' + port,
+            url=f'ws://{ip}:{port}',
             password=password,
             identification_parameters=parameters)
         return obsclient
@@ -280,7 +276,6 @@ class Conductor:
         Deletes OBS stand from db for user by its obs_name.
         """
         await self.check_user_in_db(user_id)
-
         try:
             deleted_ip = await self.db.delete_users_obs(user_id, obs_name)
             return deleted_ip

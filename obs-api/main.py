@@ -268,8 +268,8 @@ async def check_group_obs(request_body: CheckGroupObs):
 
 @app.get('/check_obs_groups')
 async def check_obs_group(request_body: CheckObsGroups):
-    ip, port, password = db.get_obs_info(request_body.user_id, request_body.obs_name)
-    groups = db.find_obs_groups(ip, port)
+    ip, port, password = await db.get_obs_info(request_body.user_id, request_body.obs_name)
+    groups = await db.find_obs_groups(ip, port)
     return JSONResponse(content=groups)
 
 
@@ -449,8 +449,8 @@ async def get_obs_info_handler(request_body: UserObs):
     :param request_body:
     :return:
     """
-    ip, port, password = db.get_obs_info(request_body.user_id,
-                                         request_body.obs_name)
+    ip, port, password = await db.get_obs_info(request_body.user_id,
+                                               request_body.obs_name)
     return JSONResponse(content={'ip': ip, 'port': port, 'password': password})
 
 

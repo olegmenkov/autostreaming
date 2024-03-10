@@ -3,6 +3,7 @@ from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
 
+
 # OBS Table
 class OBS(Base):
     __tablename__ = 'obs'
@@ -12,17 +13,20 @@ class OBS(Base):
     OBS_port = Column(Integer, nullable=False)
     OBS_pswd = Column(String(40), nullable=False)
 
+
 # Users Table
 class Users(Base):
     __tablename__ = 'users'
 
     U_id = Column(String(36), primary_key=True, unique=True)
 
+
 # Groups Table
 class Groups(Base):
     __tablename__ = 'groups'
 
     G_id = Column(String(36), primary_key=True)
+
 
 # Users_OBS Table
 class Users_OBS(Base):
@@ -33,6 +37,7 @@ class Users_OBS(Base):
     UO_name = Column(String(40), nullable=False)
     UO_access_grant = Column(Boolean, nullable=False)
 
+
 # Group_membership Table
 class Group_membership(Base):
     __tablename__ = 'group_membership'
@@ -41,6 +46,7 @@ class Group_membership(Base):
     user_id = Column(Integer, primary_key=True)
     M_admin = Column(Boolean, nullable=False)
 
+
 # Groups_OBS Table
 class Groups_OBS(Base):
     __tablename__ = 'groups_obs'
@@ -48,6 +54,7 @@ class Groups_OBS(Base):
     group_id = Column(Integer, primary_key=True)
     OBS_id = Column(String(36), primary_key=True)
     GO_name = Column(String(40), nullable=False)
+
 
 # Schedule Table
 class Schedule(Base):
