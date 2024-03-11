@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, Date
+from sqlalchemy import Column, Integer, String, Boolean, Date, BigInteger
 from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
@@ -32,7 +32,7 @@ class Groups(Base):
 class Users_OBS(Base):
     __tablename__ = 'users_obs'
 
-    user_id = Column(Integer, primary_key=True)
+    user_id = Column(BigInteger, primary_key=True)
     OBS_id = Column(String(36), primary_key=True)
     UO_name = Column(String(40), nullable=False)
     UO_access_grant = Column(Boolean, nullable=False)
@@ -42,8 +42,8 @@ class Users_OBS(Base):
 class Group_membership(Base):
     __tablename__ = 'group_membership'
 
-    group_id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, primary_key=True)
+    group_id = Column(String(36), primary_key=True)
+    user_id = Column(BigInteger, primary_key=True)
     M_admin = Column(Boolean, nullable=False)
 
 
@@ -51,7 +51,7 @@ class Group_membership(Base):
 class Groups_OBS(Base):
     __tablename__ = 'groups_obs'
 
-    group_id = Column(Integer, primary_key=True)
+    group_id = Column(String(36), primary_key=True)
     OBS_id = Column(String(36), primary_key=True)
     GO_name = Column(String(40), nullable=False)
 
@@ -61,6 +61,6 @@ class Schedule(Base):
     __tablename__ = 'schedule'
 
     OBS_id = Column(String(36), primary_key=True)
-    group_id = Column(Integer, primary_key=True)
+    group_id = Column(String(36), primary_key=True)
     S_start = Column(Date, nullable=False)
     S_end = Column(Date, nullable=False)

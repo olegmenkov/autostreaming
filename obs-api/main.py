@@ -387,23 +387,6 @@ async def plan_stream(request_body: PlanStreamModel):
                                          f'{interval[1]}'})
 
 
-# @app.get('/schedule_of_obs')
-# async def schedule_of_obs(request_body: GetScheduleModel):
-#     obs_intervals, _ = db.get_obs_intervals(request_body.user_id,
-#                                             request_body.obs_name)
-#
-#     obs_intervals = [(obs[0].strftime("%d.%m.%Y %H:%M"),
-#                       obs[1].strftime("%d.%m.%Y %H:%M")) for obs in obs_intervals]
-#
-#     resp = 'Занятые слоты времени для данного стенда:'
-#     for obs in obs_intervals:
-#         if resp[-1] != ':':
-#             resp += f', {obs[0]} - {obs[1]}'
-#         else:
-#             resp += f' {obs[0]} - {obs[1]}'
-#     return JSONResponse(content=resp)
-
-
 @app.post('/trigger_calendar_start_stream')
 async def start_stream_calendar(calendar_data: CalendarData):
     """

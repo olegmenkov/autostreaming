@@ -324,7 +324,6 @@ class Conductor:
         Returns all OBS stands (with ip and port) that are available for this group.
         """
         await self.check_group_in_db(group_id)
-
         try:
             obs_stands = await self.db.get_groups_obs(group_id)
             return obs_stands
