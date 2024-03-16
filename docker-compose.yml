@@ -8,15 +8,28 @@ services:
     env_file:
       - .env
     restart: always
-  redis:
-    image: "redis:latest"
-    ports:
-      - '6379:6379'
-    network_mode: "host"
-    restart: always
+#  redis:
+#    image: "redis:latest"
+#    ports:
+#      - '6379:6379'
+#    restart: always
   tg:
     build: tg-bot/.
     network_mode: "host"
     env_file:
       - .env
     restart: always
+  db:
+    image: postgres:13
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: as_user
+      POSTGRES_PASSWORD: as_pass
+      POSTGRES_DB: as_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
