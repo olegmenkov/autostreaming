@@ -1,5 +1,18 @@
+# Создайте файл .env
+Пример файла:
+```BOT_TOKEN=6030500018:AAFM4cНQnSGXNO-XSO1GpJEP9hmq_FMzfvU
+KEY=yi86wOdz38K1psqCRAxBDoltR-rc2gBcq35_lZihAnc=```
 
-# Запуск через докер
+В него нужно вписать две вещи: токен телеграм-бота и ключ шифрования информации в БД
+1. Токен можно взять в Телеграм-боте BotFather (https://t.me/BotFather): введите команду /mybots, выберите своего бота и нажмите на кнопку ```API Token```
+2. Ключ шифрования вы можете сгенерировать, запустив следующий код на Python:
+```python
+from cryptography.fernet import Fernet
+key = Fernet.generate_key()
+print(key)
+```
+
+# Запустите проект через докер
 ```
 docker-compose build
 docker-compose up -d
@@ -18,13 +31,17 @@ ERROR: for obs  "host" network_mode is incompatible with port_bindings
 **То обновите свой докер**
 
 ## Накатить миграции на бд
-Для этого создайте виртуалку
+```
+alembic upgrade head
+```
+Если возникает ошибка: ```-bash: alembic: command not found```,
+cоздайте виртуальное окружение по этому гайду:
 https://timeweb.cloud/tutorials/python/kak-sozdat-virtualnoe-okruzhenie
-и скачайте туда дополнения
+и скачайте туда дополнения следующим образом:
 ```
 pip install alembic psycopg2-binary sqlalchemy
 ```
-и накатите миграции
+После этого можете накатить миграции
 ```
 alembic upgrade head
 ```
