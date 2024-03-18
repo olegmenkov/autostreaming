@@ -1,7 +1,9 @@
 # Создайте файл .env
 Пример файла:
-```BOT_TOKEN=6030500018:AAFM4cНQnSGXNO-XSO1GpJEP9hmq_FMzfvU
-KEY=yi86wOdz38K1psqCRAxBDoltR-rc2gBcq35_lZihAnc=```
+```
+BOT_TOKEN=6030500018:AAFM4cНQnSGXNO-XSO1GpJEP9hmq_FMzfvU
+KEY=yi86wOdz38K1psqCRAxBDoltR-rc2gBcq35_lZihAnc=
+```
 
 В него нужно вписать две вещи: токен телеграм-бота и ключ шифрования информации в БД
 1. Токен можно взять в Телеграм-боте BotFather (https://t.me/BotFather): введите команду /mybots, выберите своего бота и нажмите на кнопку ```API Token```
