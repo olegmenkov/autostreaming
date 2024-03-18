@@ -16,6 +16,12 @@ docker-compose build && docker-compose up -d
 ERROR: for obs  "host" network_mode is incompatible with port_bindings
 ```
 **То обновите свой докер**
+
+## Накатить миграции на бд
+```
+alembic upgrade head
+```
+
 ## Запуск на локальном устройстве без докеров
 1. Запустите бота при помощи
 ```
