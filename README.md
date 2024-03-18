@@ -18,6 +18,13 @@ ERROR: for obs  "host" network_mode is incompatible with port_bindings
 **То обновите свой докер**
 
 ## Накатить миграции на бд
+Для этого создайте виртуалку
+https://timeweb.cloud/tutorials/python/kak-sozdat-virtualnoe-okruzhenie
+и скачайте туда дополнения
+```
+pip install alembic psycopg2-binary sqlalchemy
+```
+и накатите миграции
 ```
 alembic upgrade head
 ```
