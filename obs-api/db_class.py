@@ -177,7 +177,7 @@ class Database:
 
     async def check_user_in_group(self, group_id: str, user_id: str) -> bool:
         query = text("""
-            SELECT 1 FROM group_membership 
+            SELECT user_id FROM group_membership 
             WHERE group_id = :group_id AND user_id = :user_id
         """)
         result = await self.execute(query, {'group_id': group_id, 'user_id': int(user_id)})
