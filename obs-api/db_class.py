@@ -79,7 +79,7 @@ class Database:
             INSERT INTO groups ("G_id")
             VALUES (:group_id)
         """)
-        await self.execute(query, {'group_id': int(group_id)})
+        await self.execute(query, {'group_id': group_id})
 
     async def check_user_in_db(self, user_id: str) -> bool:
         query = text('SELECT EXISTS(SELECT 1 FROM users WHERE "U_id" = :user_id)')
@@ -90,7 +90,7 @@ class Database:
         query = text("""SELECT 1
         FROM groups
         WHERE "G_id" = :group_id""")
-        result = await self.execute(query, {'group_id': int(group_id)})
+        result = await self.execute(query, {'group_id': group_id})
         return result.scalar()
 
     async def get_obs_info(self, user_id: str, obs_name: str):
@@ -108,7 +108,7 @@ class Database:
             FROM groups_obs INNER JOIN obs USING("OBS_id")
             WHERE group_id = :group_id AND "GO_name" = :obs_name
         """)
-        result = await self.execute(query, {'group_id': int(group_id), 'obs_name': obs_name})
+        result = await self.execute(query, {'group_id': group_id, 'obs_name': obs_name})
         return await result.fetchone()
 
     async def find_obs_groups(self, ip: str, port: str):
@@ -155,7 +155,7 @@ class Database:
             WHERE group_id = :group_id AND
             ("GO_name" = :obs_name OR ("OBS_ip" = :ip AND "OBS_port" = :port))
         """)
-        result = await self.execute(check_group_obs_query, {'group_id': int(group_id),
+        result = await self.execute(check_group_obs_query, {'group_id': group_id,
                                                             'obs_name': obs_name,
                                                             'ip': ip, 'port': int(port)})
         if result.scalar():
@@ -167,7 +167,7 @@ class Database:
             INSERT INTO groups_obs (group_id, "OBS_id", "GO_name") 
             VALUES (:group_id, :obs_id, :obs_name)
         """)
-        await self.execute(insert_group_obs_query, {'group_id': int(group_id), 'obs_id': obs_id, 'obs_name': obs_name})
+        await self.execute(insert_group_obs_query, {'group_id': group_id, 'obs_id': obs_id, 'obs_name': obs_name})
         insert_group_obs_query = text("""
                     INSERT INTO obs ("OBS_id", "OBS_ip", "OBS_port", "OBS_pswd") 
                     VALUES (:obs_id, :ip, :port, :encrypted_password)
@@ -180,7 +180,7 @@ class Database:
             SELECT 1 FROM group_membership 
             WHERE group_id = :group_id AND user_id = :user_id
         """)
-        result = await self.execute(query, {'group_id': int(group_id), 'user_id': int(user_id)})
+        result = await self.execute(query, {'group_id': group_id, 'user_id': int(user_id)})
         return bool(result.scalar())
 
     async def add_user_to_group(self, group_id: str, user_id: str, is_admin: bool):
@@ -189,7 +189,7 @@ class Database:
             VALUES (:group_id, :user_id, :is_admin)
             ON CONFLICT (group_id, user_id) DO NOTHING
         """)
-        await self.execute(query, {'group_id': int(group_id),
+        await self.execute(query, {'group_id': group_id,
                                    'user_id': int(user_id), 'is_admin': is_admin})
 
     async def get_group_obs_names(self, group_id: str):
@@ -197,7 +197,7 @@ class Database:
             SELECT "GO_name" FROM groups_obs 
             WHERE group_id = :group_id
         """)
-        result = await self.execute(query, {'group_id': int(group_id)})
+        result = await self.execute(query, {'group_id': group_id})
         return [row[0] for row in result.fetchall()]
 
     async def remove_user_from_group(self, group_id: str, user_id: str):
@@ -205,7 +205,7 @@ class Database:
             DELETE FROM group_membership 
             WHERE group_id = :group_id AND user_id = :user_id
         """)
-        await self.execute(query, {'group_id': int(group_id), 'user_id': int(user_id)})
+        await self.execute(query, {'group_id': group_id, 'user_id': int(user_id)})
 
     async def remove_admin_from_group(self, group_id: str, user_id: str):
         query = text("""
@@ -213,7 +213,7 @@ class Database:
             SET "M_admin" = False 
             WHERE group_id = :group_id AND user_id = :user_id
         """)
-        await self.execute(query, {'group_id': int(group_id), 'user_id': int(user_id)})
+        await self.execute(query, {'group_id': group_id, 'user_id': int(user_id)})
 
     async def remove_group_obs_from_user(self, group_id: str, user_id: str):
         query = text("""
@@ -222,7 +222,7 @@ class Database:
                 SELECT "GO_name" FROM groups_obs WHERE group_id = :group_id
             )
         """)
-        await self.execute(query, {'group_id': int(group_id), 'user_id': int(user_id)})
+        await self.execute(query, {'group_id': group_id, 'user_id': int(user_id)})
 
     async def edit_users_obs(self, user_id: str, obs_name: str, field_to_change: str, new_value):
         # Handle updating OBS name separately
@@ -256,7 +256,7 @@ class Database:
                 SET "GO_name" = :new_value 
                 WHERE group_id = :group_id AND "GO_name" = :obs_name
             """)
-            await self.execute(query, {'group_id': int(group_id), 'obs_name': obs_name, 'new_value': new_value})
+            await self.execute(query, {'group_id': group_id, 'obs_name': obs_name, 'new_value': new_value})
         elif field_to_change in {'ip', 'port', 'password'}:
             field_in_db_mapping = {'ip': "OBS_ip", 'port': "OBS_port", 'password': "OBS_pswd"}
             field_in_db = field_in_db_mapping[field_to_change]
@@ -266,7 +266,7 @@ class Database:
                 SELECT "OBS_id" FROM groups_obs 
                 WHERE group_id = :group_id AND "GO_name" = :obs_name
             """)
-            obs_id_result = await self.execute(obs_id_subquery, {'group_id': int(group_id), 'obs_name': obs_name})
+            obs_id_result = await self.execute(obs_id_subquery, {'group_id': group_id, 'obs_name': obs_name})
             obs_id = obs_id_result.scalar()
 
             if obs_id:
@@ -284,7 +284,7 @@ class Database:
             SELECT user_id FROM group_membership 
             WHERE group_id = :group_id
         """)
-        result = await self.execute(query, {'group_id': int(group_id)})
+        result = await self.execute(query, {'group_id': group_id})
         return [row[0] for row in result.fetchall()]
 
     async def update_admin_status(self, group_id: str, user_id: str, admin_status: bool):
@@ -293,14 +293,14 @@ class Database:
             SET M_admin = :admin_status
             WHERE group_id = :group_id AND user_id = :user_id
         """)
-        await self.execute(query, {'group_id': int(group_id), 'user_id': user_id, 'admin_status': admin_status})
+        await self.execute(query, {'group_id': group_id, 'user_id': user_id, 'admin_status': admin_status})
 
     async def is_user_admin_of_group(self, group_id: str, user_id: str) -> bool:
         query = text("""
             SELECT "M_admin" FROM group_membership
             WHERE group_id = :group_id AND user_id = :user_id
         """)
-        result = await self.execute(query, {'group_id': int(group_id), 'user_id': int(user_id)})
+        result = await self.execute(query, {'group_id': group_id, 'user_id': int(user_id)})
         row = result.fetchone()
         return row is not None and row[0]  # row[0] is the M_admin value
 
@@ -332,7 +332,7 @@ class Database:
             SELECT "OBS_id" FROM groups_obs
             WHERE group_id = :group_id AND "GO_name" = :obs_name
         """)
-        result = await self.execute(get_obs_id_query, {'group_id': int(group_id), 'obs_name': obs_name})
+        result = await self.execute(get_obs_id_query, {'group_id': group_id, 'obs_name': obs_name})
         obs_id = result.scalar()
 
         if not obs_id:
@@ -343,7 +343,7 @@ class Database:
             DELETE FROM groups_obs 
             WHERE group_id = :group_id AND "GO_name" = :obs_name
         """)
-        await self.execute(delete_query, {'group_id': int(group_id), 'obs_name': obs_name})
+        await self.execute(delete_query, {'group_id': group_id, 'obs_name': obs_name})
 
         return obs_id
 
@@ -371,7 +371,7 @@ class Database:
             JOIN obs ON groups_obs."OBS_id" = obs."OBS_id"
             WHERE group_id = :group_id
         """)
-        result = await self.execute(query, {'group_id': int(group_id)})
+        result = await self.execute(query, {'group_id': group_id})
         return [[row[0], row[1], row[2]] for row in result.fetchall()]
 
 
