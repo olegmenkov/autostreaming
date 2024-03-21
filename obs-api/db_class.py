@@ -180,7 +180,7 @@ class Database:
             SELECT 1 FROM group_membership 
             WHERE group_id = :group_id AND user_id = :user_id
         """)
-        result = await self.execute(query, {'group_id': int(group_id), 'user_id': int(user_id)})
+        result = await self.execute(query, {'group_id': group_id, 'user_id': int(user_id)})
         return bool(result.scalar())
 
     async def add_user_to_group(self, group_id: str, user_id: str, is_admin: bool):
