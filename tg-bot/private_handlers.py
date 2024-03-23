@@ -487,9 +487,10 @@ async def process_add_obs(message: Message, state: FSMContext) -> None:
         await state.set_state(Form.add_obs)
         return
 
-    ip = ip.replace(' ', '')
-    port = port.replace(' ', '')
-    password = password.replace(' ', '')
+    name = name.strip()
+    ip = ip.strip()
+    port = port.strip()
+    password = password.strip()
     logger.info('Received obs_name, ip, port and password')
 
     # проверяем на корректность данных:
