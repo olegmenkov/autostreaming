@@ -232,8 +232,8 @@ async def start(message: Message):
     body = {"user_id": user_id}
     url = 'http://127.0.0.1:8000/register_user'  # регистрируем нового пользователя
     response = requests.post(url, data=json.dumps(body))
-    logger.info(f'Sent user_id and received {str(response.status_code)}')
-    logger.info(f'Sent user_id and received {str(response.content)}')
+    logger.info(f'Sent {body} and received {str(response.status_code)}')
+    logger.info(f'Sent {body} and received {str(response.content)}')
 
     if response.status_code != 200:
         await message.answer('Произошла ошибка. Пожалуйста, обратитесь к команде проекта СВТ-31.')

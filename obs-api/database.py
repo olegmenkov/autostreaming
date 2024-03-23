@@ -1,6 +1,6 @@
 import pickle
 from datetime import datetime
-from typing import Any
+from typing import Any, List, Tuple
 
 import simpleobsws
 from fastapi import HTTPException
@@ -70,10 +70,10 @@ class RedisDatabase:
             groups_table[group_id]['obs'] = {}
             self.db.set("groups_table", pickle.dumps(groups_table))
             logger.info(f'Added group {group_id} to database')
-
         else:
             raise HTTPException(status_code=409,
                             detail=f'Duplicated group.')
+
 
     def check_user_in_db(self, user_id: str):
         users_table = pickle.loads(self.db.get("users_table"))
@@ -101,9 +101,7 @@ class RedisDatabase:
         ip = user_dict[obs_name]['ip']
         port = user_dict[obs_name]['port']
         password = user_dict[obs_name]['password']
-
         password = decrypt_password(password)
-
         return ip, port, password
 
     def get_group_obs_info(self, group_id: str, obs_name: str) -> Any:
@@ -435,7 +433,7 @@ class RedisDatabase:
         self.db.set("groups_table", pickle.dumps(groups_table))
 
 
-    def get_users_obs(self, user_id: str) -> list[list[Any]]:
+    def get_users_obs(self, user_id: str) -> List[List[Any]]:
         """
         Returns all obs stands (with ip and port) that available for this user
         i.e. added before
@@ -447,7 +445,7 @@ class RedisDatabase:
                      user_dict.items()]
         return obs_names
 
-    def get_groups_obs(self, group_id: str) -> list[list[Any]]:
+    def get_groups_obs(self, group_id: str) -> List[List[Any]]:
         """
         Returns all obs stands (with ip and port) that available for this group
         i.e. added before
@@ -479,7 +477,6 @@ class RedisDatabase:
         self.db.set(obs_ip, pickle.dumps(
             obs_intervals))  # todo: добавить экспаир через неделю
         self.db.select(0)
-
         return interval
 
     def flush_old_intervals(self, obs_ip: str) -> None:
@@ -496,7 +493,7 @@ class RedisDatabase:
         self.db.select(0)
 
     def get_obs_intervals(self, user_id: str,
-                          obs_name: str) -> tuple[list, str]:
+                          obs_name: str) -> Tuple[list, str]:
         """
         Method that returns all intervals when current obs has already reserved
         """

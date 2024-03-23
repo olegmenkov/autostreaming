@@ -1,6 +1,14 @@
-from typing import Any, Union
+from typing import Any, Union, Tuple
 from schemas import CalendarData, CalendarDataStop
 import simpleobsws
+
+
+DB_CONFIG = {
+    "host": 'localhost',
+    "port": 5433,
+    "user": 'as_user',
+    "password": "as_pass",
+    "database": 'as_db'}
 
 
 def check_intersect(first, second):
@@ -16,7 +24,7 @@ def check_intersect(first, second):
 
 
 def intervals_intersection(intervals: list,
-                           target: list) -> tuple[bool, Any]:
+                           target: list) -> Tuple[bool, Any]:
     """
     This function checks if new interval intersects with other
     intervals that already stored

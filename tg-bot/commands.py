@@ -48,4 +48,3 @@ for k, v in private.items():
 
 for k, v in group.items():
     group_commands.append(BotCommand(command=k, description=v))
-
