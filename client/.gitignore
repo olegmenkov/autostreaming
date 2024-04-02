@@ -1,0 +1,7 @@
+.idea
+__pycache__
+*.env
+obs_script.py
+config.conf
+todo.txt
+sandbox.py

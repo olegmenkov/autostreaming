@@ -15,13 +15,62 @@ from schemas import UserId, CalendarData, CalendarDataStop
 from schemas import UsersAddObs, UserDelObs, UsersEditObs, CheckObs, StartStreamModel, \
     StopStreamModel, StartRecordingModel, StopRecordingModel, UserPingStreamObs, PlanStreamModel, UserObs, \
     GetScenesModel, SetSceneModel, AddGroup, AddGroupMember, DeleteGroupMember, AddGroupObs, \
-    EditGroupObs, DeleteGroupObs, CheckGroupObs, CheckObsGroups
+    EditGroupObs, DeleteGroupObs, CheckGroupObs, CheckObsGroups, ClientState
 from utils import config_obsclient_calendar, DB_CONFIG
-
+import os
+from dotenv import load_dotenv
+import paho.mqtt.client as mqtt
 db = Database(**DB_CONFIG)
 # new_db = Database(**DB_CONFIG)
 app = FastAPI()
 conductor = Conductor(db)
+
+# Get local vars
+# MQTT broker configuration
+load_dotenv()
+MQTT_BROKER_HOST = os.getenv("MQTT_BROKER_HOST")
+MQTT_BROKER_PORT = os.getenv("MQTT_BROKER_PORT")
+MQTT_TOPIC = os.getenv("MQTT_TOPIC")
+MQTT_USERNAME = os.getenv("MQTT_USERNAME")
+MQTT_PASSWORD = os.getenv("MQTT_PASSWORD")
+
+# Global vars for link mqtt callback funcs
+RESPONSE = None
+REQ_ID = ""
+
+# Define MQTT client
+mqtt_client = mqtt.Client()
+mqtt_client.username_pw_set(MQTT_USERNAME, MQTT_PASSWORD)
+
+
+# Define callback functions
+def on_connect(client, userdata, flags, rc):
+    logger.info("Connected to MQTT broker with result code: "+str(rc))
+    client.subscribe(MQTT_TOPIC)
+
+
+def publish(client, topic, data):
+    msg = json.dumps(data)
+    result = mqtt_client.publish(MQTT_TOPIC, msg)
+    status = result[0]
+
+    if status:
+        logger.info(f"Failed to send message to topic {MQTT_TOPIC}")
+
+
+def on_message(client, userdata, msg):
+    global RESPONSE
+
+    resp = json.loads(msg.payload)
+    if "resp_id" in resp and resp["resp_id"] == REQ_ID:
+        RESPONSE = resp
+
+
+# Assign callbacks to client
+mqtt_client.on_connect = on_connect
+mqtt_client.on_message = on_message
+# Connect to MQTT broker
+mqtt_client.connect_async(MQTT_BROKER_HOST, MQTT_BROKER_PORT, 60)
 
 
 # @app.get('/show_bd')
@@ -476,3 +525,15 @@ async def get_scenes_handler(request_body: GetScenesModel):
     scenes_info = await get_scenes(obsclient)
 
     return JSONResponse(content=scenes_info)
+
+
+@app.post('/client_state')
+async def set_client_state(request_body: ClientState):
+    logger.info(request_body.time + ": " + "State of " + request_body.name + " is " +
+                "UP" if request_body.state else "DOWN")
+
+
+@app.post('/set_new_ip')
+async def set_new_ip_for_client(request_body: IpChange):
+    logger.info(f"Ip was changed for {request_body.name} from {request_body.old_ip}:{request_body.port} to"
+                f" {request_body.new_ip}:{request_body.port}")
