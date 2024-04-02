@@ -145,3 +145,16 @@ class CalendarDataStop(BaseModel):
 class UserObs(BaseModel):
     user_id: str
     obs_name: str
+
+
+class ClientState(BaseModel):
+    name: str
+    time: str
+    state: bool
+
+
+class IpChange(BaseModel):
+    name: str
+    old_ip: str
+    port: int
+    new_ip: str
