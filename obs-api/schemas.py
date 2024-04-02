@@ -35,7 +35,7 @@ class UsersAddObs(BaseModel):
 class AddGroupObs(BaseModel):
     group_id: str
     admin_id: str
-    obs_names: list[str]
+    obs_names: List[str]
 
 
 class UsersEditObs(BaseModel):

@@ -7,3 +7,5 @@ redis==4.5.1
 requests==2.26.0
 cryptography==41.0.2
 python-dotenv==1.0.0
+asyncpg
+sqlalchemy
