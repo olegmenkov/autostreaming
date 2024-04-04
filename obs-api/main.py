@@ -11,7 +11,7 @@ from db_class import Database
 from obs_functions import start_youtube_stream, set_stream_parameters, start_recording
 from obs_functions import stop_youtube_stream, ping_stream, stream_time, ping_recording, \
     recording_time, stop_recording, ping_obs, get_scenes, set_scene
-from schemas import UserId, CalendarData, CalendarDataStop
+from schemas import UserId, CalendarStartStream, CalendarStopStream, CalendarRecording
 from schemas import UsersAddObs, UserDelObs, UsersEditObs, CheckObs, StartStreamModel, \
     StopStreamModel, StartRecordingModel, StopRecordingModel, UserPingStreamObs, PlanStreamModel, UserObs, \
     GetScenesModel, SetSceneModel, AddGroup, AddGroupMember, DeleteGroupMember, AddGroupObs, \
@@ -143,10 +143,10 @@ async def stop_recording_handler(request_body: StopRecordingModel):
         return JSONResponse(status_code=409,
                             content=f'The recording is not running')
     await stop_recording(obsclient)
-    logger.info(f"Started recording on obs "
+    logger.info(f"Stopped recording on obs "
                 f"{obsclient.url.split('ws://')[1].split(':')[0]} by user "
                 f"{request_body.user_id}")
-    return JSONResponse(content={'response': "started recording successfully"})
+    return JSONResponse(content={'response': "stopped recording successfully"})
 
 
 @app.get('/ping_redis')
@@ -388,7 +388,7 @@ async def plan_stream(request_body: PlanStreamModel):
 
 
 @app.post('/trigger_calendar_start_stream')
-async def start_stream_calendar(calendar_data: CalendarData):
+async def start_stream_calendar(calendar_data: CalendarStartStream):
     """
     Запуск стрима через календарь, в этом эндпоинте необходимо передавать
     сразу все параметры для запуска стрима. Однако user_id не требуется
@@ -409,7 +409,7 @@ async def start_stream_calendar(calendar_data: CalendarData):
 
 
 @app.post('/trigger_calendar_stop_stream')
-async def stop_stream_calendar(calendar_data: CalendarDataStop):
+async def stop_stream_calendar(calendar_data: CalendarStopStream):
     """
     Прекращение стрима через календарь, в этом эндпоинте необходимо передавать
     сразу все параметры (кроме ключа трансляции).
@@ -422,6 +422,38 @@ async def stop_stream_calendar(calendar_data: CalendarDataStop):
     obsclient = config_obsclient_calendar(calendar_data)
     await stop_youtube_stream(obsclient)
     return JSONResponse(content={'response': "stopped successfully"})
+
+
+@app.post('/trigger_calendar_start_record')
+async def start_recording_calendar(calendar_data: CalendarRecording):
+    obsclient = config_obsclient_calendar(calendar_data)
+    if not await ping_obs(obsclient):
+        return JSONResponse(status_code=409,
+                            content='Obs stand is unavailable')
+    if await ping_recording(obsclient):
+        return JSONResponse(status_code=409,
+                            content='Obs stand with this ip currently in use')
+    await start_recording(obsclient)
+    logger.info(f"Started recording on obs "
+                f"{obsclient.url.split('ws://')[1].split(':')[0]} from calendar")
+    return JSONResponse(content={'response': "started recording successfully"})
+
+
+@app.post('/trigger_calendar_stop_record')
+async def stop_recording_calendar(calendar_data: CalendarRecording):
+    obsclient = config_obsclient_calendar(calendar_data)
+    if not await ping_obs(obsclient):
+        return JSONResponse(status_code=409,
+                            content='Obs stand is unavailable')
+
+    flag = await ping_recording(obsclient)
+    if not flag:
+        return JSONResponse(status_code=409,
+                            content=f'The recording is not running')
+    await stop_recording(obsclient)
+    logger.info(f"Stopped recording on obs "
+                f"{obsclient.url.split('ws://')[1].split(':')[0]} from calendar")
+    return JSONResponse(content={'response': "stopped recording successfully"})
 
 
 @app.get('/get_obs_info')

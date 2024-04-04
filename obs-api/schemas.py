@@ -127,7 +127,7 @@ class GetScheduleModel(BaseModel):
     obs_name: str
 
 
-class CalendarData(BaseModel):
+class CalendarStartStream(BaseModel):
     ip: str
     port: str
     password: str
@@ -135,11 +135,16 @@ class CalendarData(BaseModel):
     youtube_server: str
 
 
-class CalendarDataStop(BaseModel):
+class CalendarStopStream(BaseModel):
     ip: str
     port: str
     password: str
-    youtube_server: str
+
+
+class CalendarRecording(BaseModel):
+    ip: str
+    port: str
+    password: str
 
 
 class UserObs(BaseModel):
