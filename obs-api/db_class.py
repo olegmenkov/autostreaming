@@ -172,7 +172,7 @@ class Database:
         result = await self.execute(find_obs_id_query, {'ip': ip, 'port': int(port)})
         if not result.scalar():
             raise HTTPException(status_code=404, detail=f'OBS with ip {ip} and port {port} not found.')
-        logger.info(f'RESULT {result}')
+        logger.info(f'RESULT {result.scalar()}')
         for row in result:
             obs_id = row[0]
             break
