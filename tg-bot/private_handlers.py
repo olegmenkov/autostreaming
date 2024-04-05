@@ -92,8 +92,6 @@ class Form(StatesGroup):
 async def send_data_to_calendar(message, state):
     stream_data = await state.get_data()
     # отправляем запрос в календарь:
-    def create_params(stream_data):
-        return {key: stream_data[key] for key in stream_data}
     
     stream_data = {
         "type_of_event": stream_data['type_of_event'],
