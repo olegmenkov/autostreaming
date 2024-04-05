@@ -15,7 +15,7 @@ from schemas import UserId, CalendarData, CalendarDataStop
 from schemas import UsersAddObs, UserDelObs, UsersEditObs, CheckObs, StartStreamModel, \
     StopStreamModel, StartRecordingModel, StopRecordingModel, UserPingStreamObs, PlanStreamModel, UserObs, \
     GetScenesModel, SetSceneModel, AddGroup, AddGroupMember, DeleteGroupMember, AddGroupObs, \
-    EditGroupObs, DeleteGroupObs, CheckGroupObs, CheckObsGroups, ClientState
+    EditGroupObs, DeleteGroupObs, CheckGroupObs, CheckObsGroups, ClientState, IpChange
 from utils import config_obsclient_calendar, DB_CONFIG
 import os
 from dotenv import load_dotenv
@@ -27,9 +27,9 @@ conductor = Conductor(db)
 
 # Get local vars
 # MQTT broker configuration
-load_dotenv()
+load_dotenv("../.env")
 MQTT_BROKER_HOST = os.getenv("MQTT_BROKER_HOST")
-MQTT_BROKER_PORT = os.getenv("MQTT_BROKER_PORT")
+MQTT_BROKER_PORT = int(os.getenv("MQTT_BROKER_PORT"))
 MQTT_TOPIC = os.getenv("MQTT_TOPIC")
 MQTT_USERNAME = os.getenv("MQTT_USERNAME")
 MQTT_PASSWORD = os.getenv("MQTT_PASSWORD")

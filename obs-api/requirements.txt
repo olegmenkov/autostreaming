@@ -9,3 +9,5 @@ cryptography==41.0.2
 python-dotenv==1.0.0
 asyncpg
 sqlalchemy
+opencv-python==4.8.1.78
+paho-mqtt==1.6.1
