@@ -166,13 +166,15 @@ class Database:
 
         find_obs_id_query = text(f"""
         SELECT "OBS_id" from obs 
-        WHERE "OBS_ip" = :ip AND "OBS_port" = :port
-        LIMIT 1;
+        WHERE "OBS_ip" = :ip AND "OBS_port" = :port;
         """)
         result = await self.execute(find_obs_id_query, {'ip': ip, 'port': int(port)})
         if not result:
             raise HTTPException(status_code=404, detail=f'OBS with ip {ip} and port {port} not found.')
-        obs_id = result
+
+        for row in result:
+            obs_id = row[0]
+            break
         logger.info(f'OBS_ID {obs_id}')
 
         # Insert OBS into group_obs_info
