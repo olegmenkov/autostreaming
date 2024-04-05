@@ -115,7 +115,7 @@ class Database:
         query = text("""
             SELECT group_id 
             FROM groups_obs WHERE "OBS_id" = (
-                SELECT "OBS_ID" from obs WHERE "OBS_ip" = :ip AND "OBS_port" = :port LIMIT 1);
+                SELECT "OBS_id" from obs WHERE "OBS_ip" = :ip AND "OBS_port" = :port LIMIT 1);
         """)
         result = await self.execute(query, {'ip': ip, 'port': int(port)})
         rows = result.fetchall()
@@ -170,7 +170,10 @@ class Database:
         result = await self.execute(find_obs_id_query, {'ip': ip, 'port': int(port)})
         if not result.scalar():
             raise HTTPException(status_code=404, detail=f'OBS with ip {ip} and port {port} not found.')
-        obs_id = result.fetchone()
+
+        for row in result.fetchall():
+            obs_id = row[0]
+            break
 
         # Insert OBS into group_obs_info
         insert_group_obs_query = text("""
