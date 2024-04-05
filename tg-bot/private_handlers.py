@@ -69,12 +69,24 @@ class Form(StatesGroup):
     select_obs_set_scene = State()
     select_scene = State()
 
-    # для планирования:
+    # для планирования стрима:
     select_name = State()
     select_date = State()
     select_key = State()
     select_youtube_server = State()
     select_obs_plan_stream = State()
+
+    # для планирования записи
+    select_name_plan_recording = State()
+    select_date_plan_recording = State()
+    select_obs_plan_recording = State()
+
+    # для планирования стрима+записи:
+    select_name_plan_stream_rec = State()
+    select_date_plan_stream_rec = State()
+    select_key_plan_stream_rec = State()
+    select_youtube_server_plan_stream_rec = State()
+    select_obs_plan_stream_rec = State()
 
 
 async def send_data_to_calendar(message, state):
@@ -393,6 +405,18 @@ async def plan_stream(message: Message, state: FSMContext):
     logger.info('Received the plan_stream command')
     await state.set_state(Form.select_name)
     await message.answer('Дайте название этой трансляции. Например, "Защиты в аудитории 306"', reply_markup=ikb_cancel)
+
+
+@router.message(Command(commands=['plan_recording']))
+async def plan_stream(message: Message, state: FSMContext):
+    """
+    Переключает бота в состояние "Выбрать дату для планирования"
+    """
+
+    logger.info('Received the plan_recording command')
+    await state.set_state(Form.select_name_plan_recording)
+    await message.answer('Дайте название этой записи. Например, "Защиты в аудитории 306"', reply_markup=ikb_cancel)
+
 
 
 @router.message(Command(commands=['stop_stream']))
@@ -914,6 +938,94 @@ async def process_select_date(message: Message, state: FSMContext) -> None:
         await message.answer("Пожалуйста, введите данные корректно в формате ММ/ДД/ГГГГ ЧЧ:ММ:СС.",
                              reply_markup=ikb_cancel)
         await state.set_state(Form.select_date)
+
+
+@router.message(Form.select_name_plan_recording)  # для планирования
+async def process_select_name_plan_rec(message: Message, state: FSMContext) -> None:
+    """
+    Принимает ключ трансляции для планирования стрима, переключает бота в состояние "Выбор ОБС для стрима"
+    """
+
+    name = message.text
+    await state.update_data(name=name)
+    logger.info('Received the name, asked to select key')
+    await state.set_state(Form.select_obs_plan_recording)
+    await message.answer('Теперь введите ключ трансляции', reply_markup=ikb_cancel)
+
+
+@router.message(Form.select_obs_plan_recording)  # для планирования
+async def process_select_obs_plan_rec(message: Message, state: FSMContext) -> None:
+    """
+    Принимает название ОБС для планирования стрима и планирует стрим, если всё ок
+    """
+
+    name_obs = message.text
+    logger.info('Received name_obs')
+    user_id = message.from_user.id
+
+    body = {"user_id": user_id, "obs_name": name_obs}
+
+    # запрашиваем в БД информацию об этом стенде:
+    url = "http://127.0.0.1:8000/get_obs_info"
+    response = requests.get(url, data=json.dumps(body))
+    if response.status_code == 200:  # проверяем успешность запроса
+        response_data = response.json()  # получаем данные в формате JSON
+
+        # сохраняем полученные из БД данные
+        await state.update_data(ip=response_data["ip"])
+        await state.update_data(port=response_data["port"])
+        await state.update_data(password=response_data["password"])
+
+        await message.answer("""Введите дату и время начала и окончания стрима в формате MM/ДД/ГГГГ ЧЧ:ММ:СС.
+Данные нужно вводить с новой строки -- на первой строке начало, на второй окончание.
+Например:""", reply_markup=types.ReplyKeyboardRemove())
+        await message.answer("""05/19/2023 18:53:00
+05/19/2023 18:59:00""", reply_markup=ikb_cancel)
+        await state.set_state(Form.select_date_plan_recording)
+
+    elif response.status_code == 404:
+        await message.answer('Стенд OBS с таким именем не найден. Попробуйте ещё раз.',
+                             reply_markup=types.ReplyKeyboardRemove())
+        await show_obs_keyboard(message, state)
+        await state.set_state(Form.select_obs_plan_recording)
+    else:
+        await message.answer("""Произошла ошибка.
+Вы можете попробовать выбрать другой стенд с OBS из доступных. Их список вы можете посмотреть командой /check_obs
+Вы также можете нажать /start и попробовать выполнить команду снова.""", reply_markup=types.ReplyKeyboardRemove())
+
+
+@router.message(Form.select_date_plan_recording)  # для планирования
+async def process_select_date(message: Message, state: FSMContext) -> None:
+    """
+    Принимает даты начала и окончания для планирования стрима, если всё ок -- переключает
+    бота в состояние "Выбрать ключ стрима"
+    """
+
+    try:
+        date1, date2 = message.text.split('\n')
+        logger.info('Received two strings as dates')
+        # преобразуем теперь даты в нужный формат, если они введены верно
+        date1 = datetime.datetime.strptime(date1, "%m/%d/%Y %H:%M:%S")
+        date2 = datetime.datetime.strptime(date2, "%m/%d/%Y %H:%M:%S")
+        logger.info('Input strings are correct dates')
+        if date1 < date2:
+            # если даты идут в нужном порядке, сохраняем их
+            await state.update_data(date1=str(date1))
+            await state.update_data(date2=str(date2))
+
+            logger.info('date1<date2, sending data to calendar')
+            await send_data_to_calendar(message, state)  # TODO: another function
+        else:
+            logger.info('Error: date1>=date2')
+            await message.answer('Пожалуйста, введите корректные данные о датах: сперва начало, затем конец.',
+                                 reply_markup=ikb_cancel)
+            await state.set_state(Form.select_date_plan_recording)
+    except Exception as err:
+        logger.info('Incorrect input, asked for data again')
+        logger.debug(err)
+        await message.answer("Пожалуйста, введите данные корректно в формате ММ/ДД/ГГГГ ЧЧ:ММ:СС.",
+                             reply_markup=ikb_cancel)
+        await state.set_state(Form.select_date_plan_recording)
 
 
 @router.message(Form.stop_stream)
