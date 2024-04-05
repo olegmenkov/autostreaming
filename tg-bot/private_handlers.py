@@ -106,7 +106,7 @@ async def send_data_to_calendar(message, state):
     }
    
     url = "https://crm.miem.tv/telegram/calendar/create"
-    response = requests.post(url, json = stream_data)
+    response = requests.post(url, json=stream_data)
     logger.info(f'Sent {str(stream_data)} and received {str(response.status_code)}')
 
     if response.status_code == 200:
@@ -1019,7 +1019,10 @@ async def process_select_date_plan_rec(message: Message, state: FSMContext) -> N
             await state.update_data(date2=str(date2))
 
             logger.info('date1<date2, sending data to calendar')
-            await send_data_to_calendar(message, state)  # TODO: another function
+            await state.update_data(type_of_event="record")
+            await state.update_data(youtube_server="")
+            await state.update_data(key="")
+            await send_data_to_calendar(message, state)
         else:
             logger.info('Error: date1>=date2')
             await message.answer('Пожалуйста, введите корректные данные о датах: сперва начало, затем конец.',
@@ -1141,6 +1144,7 @@ async def process_select_date_plan_stream_rec(message: Message, state: FSMContex
             await state.update_data(date2=str(date2))
 
             logger.info('date1<date2, sending data to calendar')
+            await state.update_data(type_of_event="stream_record")
             await send_data_to_calendar(message, state)
         else:
             logger.info('Error: date1>=date2')
