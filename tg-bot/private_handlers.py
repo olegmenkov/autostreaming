@@ -953,7 +953,7 @@ async def process_select_name_plan_rec(message: Message, state: FSMContext) -> N
 
     name = message.text
     await state.update_data(name=name)
-    logger.info('Received the name, asked to select obs')\
+    logger.info('Received the name, asked to select obs')
 
     await message.answer('Теперь выберите OBS', reply_markup=ikb_cancel)
     await show_obs_keyboard(message, state)
