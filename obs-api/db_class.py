@@ -175,7 +175,6 @@ class Database:
         for row in result:
             obs_id = row[0]
             break
-        logger.info(f'OBS_ID {obs_id}')
 
         # Insert OBS into group_obs_info
         insert_group_obs_query = text("""
