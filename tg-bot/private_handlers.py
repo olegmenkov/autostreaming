@@ -109,7 +109,7 @@ async def send_data_to_calendar(message, state):
    
     url = "https://crm.miem.tv/telegram/calendar/create"
     response = requests.post(url, json = stream_data)
-    logger.info(f'Sent {str(params)} and received {str(response.status_code)}')
+    logger.info(f'Sent {str(stream_data)} and received {str(response.status_code)}')
 
     if response.status_code == 200:
         data = response.json()['result']
