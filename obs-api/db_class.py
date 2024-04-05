@@ -114,8 +114,8 @@ class Database:
     async def find_obs_groups(self, ip: str, port: str):
         query = text("""
             SELECT group_id 
-            FROM groups_obs INNER JOIN obs ON groups_obs."OBS_id" = obs."OBS_id"
-            WHERE "OBS_ip" = :ip AND "OBS_port" = :port;
+            FROM groups_obs WHERE "OBS_id" = (
+                SELECT "OBS_ID" from obs WHERE "OBS_ip" = :ip AND "OBS_port" = :port LIMIT 1);
         """)
         result = await self.execute(query, {'ip': ip, 'port': int(port)})
         rows = result.fetchall()
@@ -162,7 +162,16 @@ class Database:
         if result.scalar():
             raise HTTPException(status_code=409, detail=f'Duplicated OBS in group.')
 
-        obs_id = str(uuid.uuid4())
+        find_obs_id_query = text(f"""
+        SELECT "OBS_id" from obs 
+        WHERE "OBS_ip" = :ip AND "OBS_port" = :port
+        LIMIT 1;
+        """)
+        result = await self.execute(find_obs_id_query, {'ip': ip, 'port': int(port)})
+        if not result.scalar():
+            raise HTTPException(status_code=404, detail=f'OBS with ip {ip} and port {port} not found.')
+        obs_id = result.fetchone()
+
         # Insert OBS into group_obs_info
         insert_group_obs_query = text("""
             INSERT INTO groups_obs (group_id, "OBS_id", "GO_name") 
