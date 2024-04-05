@@ -171,7 +171,7 @@ class Database:
         if not result.scalar():
             raise HTTPException(status_code=404, detail=f'OBS with ip {ip} and port {port} not found.')
 
-        for row in result.fetchall():
+        for row in result:
             obs_id = row[0]
             break
 
