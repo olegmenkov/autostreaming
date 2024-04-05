@@ -115,7 +115,7 @@ class Database:
         query = text("""
             SELECT group_id 
             FROM groups_obs INNER JOIN obs
-            WHERE "OBS_ip" = :ip AND "OBS_port" = :port
+            WHERE "OBS_ip" = :ip AND "OBS_port" = :port;
         """)
         result = await self.execute(query, {'ip': ip, 'port': int(port)})
         return [row[0] for row in await result.fetchall()]
