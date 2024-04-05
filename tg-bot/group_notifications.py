@@ -11,7 +11,7 @@ async def send_group_notifications(bot: Bot, user: User, obs_name: str, type, da
     body = {"user_id": user.id, "obs_name": obs_name}
     url = 'http://127.0.0.1:8000/check_obs_groups'
     response = requests.get(url, data=json.dumps(body))
-    print()
+    logger.info(f"RESPONSE: {response, response.content}")
     groups = response.json()
     name = f'@{user.username}' if user.username else str(user.id)
     # sends notification with user's username if username is specified otherwise, user_id
