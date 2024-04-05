@@ -953,9 +953,11 @@ async def process_select_name_plan_rec(message: Message, state: FSMContext) -> N
 
     name = message.text
     await state.update_data(name=name)
-    logger.info('Received the name, asked to select key')
+    logger.info('Received the name, asked to select obs')\
+
+    await message.answer('Теперь выберите OBS', reply_markup=ikb_cancel)
+    await show_obs_keyboard(message, state)
     await state.set_state(Form.select_obs_plan_recording)
-    await message.answer('Теперь введите ключ трансляции', reply_markup=ikb_cancel)
 
 
 @router.message(Form.select_obs_plan_recording)  # для планирования
@@ -1080,7 +1082,7 @@ async def process_select_youtube_server_plan_stream_rec(message: Message, state:
         await state.update_data(youtube_server=youtube_server)
         logger.info('Received the youtube server, asked to select obs')
         await show_obs_keyboard(message, state)
-        await state.set_state(Form.select_obs_plan_stream_plan_stream_rec)
+        await state.set_state(Form.select_obs_plan_stream_rec)
 
 
 @router.message(Form.select_obs_plan_stream_rec)  # для планирования
