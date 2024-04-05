@@ -114,7 +114,7 @@ class Database:
     async def find_obs_groups(self, ip: str, port: str):
         query = text("""
             SELECT group_id 
-            FROM groups_obs INNER JOIN obs
+            FROM groups_obs INNER JOIN obs ON groups_obs.OBS_id = obs.OBS_id
             WHERE "OBS_ip" = :ip AND "OBS_port" = :port;
         """)
         result = await self.execute(query, {'ip': ip, 'port': int(port)})
