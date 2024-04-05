@@ -118,7 +118,8 @@ class Database:
             WHERE "OBS_ip" = :ip AND "OBS_port" = :port;
         """)
         result = await self.execute(query, {'ip': ip, 'port': int(port)})
-        return [row[0] for row in await result.fetchall()]
+        rows = await result.fetchall()
+        return [row[0] for row in rows]
 
     async def add_users_obs(self, user_id: str, obs_name: str, ip: str, port: str, encrypted_password: str):
         # Check for duplicates
