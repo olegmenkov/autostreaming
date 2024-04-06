@@ -85,7 +85,7 @@ class Database:
 
     async def check_user_in_db(self, user_id: str) -> bool:
         query = text('SELECT EXISTS(SELECT 1 FROM users WHERE "U_id" = :user_id)')
-        result = await self.execute(query, {'user_id': user_id})
+        result = await self.execute(query, {'user_id': str(user_id)})
         return result.scalar()
 
     async def check_group_in_db(self, group_id: str) -> bool:
