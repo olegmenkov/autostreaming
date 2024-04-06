@@ -398,6 +398,9 @@ async def start_stream_calendar(calendar_data: CalendarStartStream):
     :return:
     """
     obsclient = config_obsclient_calendar(calendar_data)
+    if not await ping_obs(obsclient):
+        return JSONResponse(status_code=409,
+                            content='Obs stand is unavailable')
     await stop_youtube_stream(obsclient)
     await set_stream_parameters(obsclient,
                                 calendar_data.stream_key,
@@ -420,6 +423,9 @@ async def stop_stream_calendar(calendar_data: CalendarStopStream):
     :return:
     """
     obsclient = config_obsclient_calendar(calendar_data)
+    if not await ping_obs(obsclient):
+        return JSONResponse(status_code=409,
+                            content='Obs stand is unavailable')
     await stop_youtube_stream(obsclient)
     return JSONResponse(content={'response': "stopped successfully"})
 
