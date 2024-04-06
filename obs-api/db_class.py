@@ -111,7 +111,7 @@ class Database:
             WHERE group_id = :group_id AND "GO_name" = :obs_name
         """)
         result = await self.execute(query, {'group_id': group_id, 'obs_name': obs_name})
-        return await result.fetchone()
+        return result.fetchone()
 
     async def find_obs_groups(self, ip: str, port: str):
         query = text("""
