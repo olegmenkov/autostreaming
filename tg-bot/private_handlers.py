@@ -120,7 +120,7 @@ async def send_data_to_calendar(message, state):
                     f"Событие не может быть создано, так как на этом стенде уже запланирован стрим на время {event_start} - {event_stop}. Пожалуйста, введите даты заново.")
                 await state.set_state(Form.select_date)
         else:
-            await message.answer('Стрим запланирован.')
+            await message.answer('Событие успешно создано в календаре.')
     else:
         logger.info(str(response.content))
         await message.answer("""Произошла ошибка. Возможно, сервис планирования временно недоступен.
