@@ -352,6 +352,17 @@ class Database:
         if not obs_id:
             raise HTTPException(status_code=404, detail='OBS with this name not found in group')
 
+        # delete from all users
+        delete_from_users_query = text("""
+            DELETE FROM users_obs
+            USING group_membership, groups_obs
+            WHERE users_obs.user_id = group_membership.user_id
+            AND group_membership."M_admin" = False
+            AND group_membership.group_id = :group_id
+            AND groups_obs."OBS_id" = :obs_id;
+        """)
+        await self.execute(delete_from_users_query, {'group_id': group_id, 'obs_id': obs_id})
+
         # Delete the OBS stand
         delete_query = text("""
             DELETE FROM groups_obs 
@@ -363,8 +374,8 @@ class Database:
 
     async def remove_user_obs_by_id(self, user_id: str, obs_id: str):
         delete_query = text("""
-            DELETE FROM user_obs_info
-            WHERE user_id = :user_id AND OBS_id = :obs_id
+            DELETE FROM users_obs
+            WHERE user_id = :user_id AND "OBS_id" = :obs_id
         """)
         await self.execute(delete_query, {'user_id': user_id, 'obs_id': obs_id})
 
