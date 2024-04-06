@@ -929,12 +929,12 @@ async def process_select_date(message: Message, state: FSMContext) -> None:
             # если даты идут в нужном порядке, сохраняем их
             await state.update_data(date1=str(date1))
             await state.update_data(date2=str(date2))
+            await state.update_data(type_of_event="stream")
 
             logger.info('date1<date2, sending data to calendar')
             await send_data_to_calendar(message, state)
         else:
             logger.info('Error: date1>=date2')
-            await state.update_data(type_of_event="stream")
             await message.answer('Пожалуйста, введите корректные данные о датах: сперва начало, затем конец.',
                                  reply_markup=ikb_cancel)
             await state.set_state(Form.select_date)
