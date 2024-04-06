@@ -106,7 +106,7 @@ class Database:
 
     async def get_group_obs_info(self, group_id: str, obs_name: str):
         query = text("""
-            SELECT ip, port, password 
+            SELECT "OBS_ip", "OBS_port", "OBS_pswd" 
             FROM groups_obs INNER JOIN obs USING("OBS_id")
             WHERE group_id = :group_id AND "GO_name" = :obs_name
         """)
