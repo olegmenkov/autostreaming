@@ -693,45 +693,45 @@ rtmp://a.rtmp.youtube.com/live2""", reply_markup=ikb_cancel)
 async def process_select_server_key(message: Message, state: FSMContext, bot: Bot) -> None:
     try:
         key, youtube_server = message.text.split('\n')
-        logger.info('Received server and key')
-        user_id = message.from_user.id
-
-        user_data = await state.get_data()
-        obs_name = user_data['obs_name']
-
-        body = {"user_id": user_id, "obs_name": obs_name, "key": key, "youtube_server": youtube_server}
-        url = 'http://127.0.0.1:8000/start_stream'
-        response = requests.post(url, data=json.dumps(body))
-        logger.info(f'Sent user_id, obs_name and key and received {str(response.status_code)}')
-        logger.info(f'Sent user_id and received {str(response.content)}')
-
-        if response.status_code == 200:
-            await message.answer('Стрим успешно запущен.')
-            await group_notifications.send_group_notifications(bot, message.from_user, user_data['obs_name'],
-                                                               'start_stream')
-        elif response.status_code == 404:
-            await message.answer('Стенд с таким именем не найден. Пожалуйста, проверьте правильность написания.')
-        elif response.status_code == 409:
-            if 'in use' in str(response.content):
-                await message.answer(
-                    "Данный стенд сейчас занят. Вы можете выбрать другой. Список доступных стендов можете посмотреть командой /check_obs")
-            elif 'unavailable' in str(response.content):
-                await message.answer(
-                    """Данный стенд с OBS сейчас недоступен. Вы можете попробовать выбрать другой стенд с OBS из доступных.
-Их список вы можете посмотреть командой /check_obs.""",  reply_markup=types.ReplyKeyboardRemove())
-        else:
-            await message.answer("""Произошла ошибка.
-Вы можете попробовать выбрать другой стенд с OBS из доступных. Их список вы можете посмотреть командой /check_obs
-Вы также можете нажать /start и попробовать выполнить команду снова.""")
-
-        await message.delete()
-        logger.info(f'Deleted the message')
-
     except Exception as err:
         logger.info('Incorrect info, asked for data again')
         logger.debug(err)
         await message.answer("Пожалуйста, введите данные корректно, каждое поле с новой строки.", reply_markup=ikb_cancel)
         await state.set_state(Form.select_server_key)
+
+    logger.info('Received server and key')
+    user_id = message.from_user.id
+
+    user_data = await state.get_data()
+    obs_name = user_data['obs_name']
+
+    body = {"user_id": user_id, "obs_name": obs_name, "key": key, "youtube_server": youtube_server}
+    url = 'http://127.0.0.1:8000/start_stream'
+    response = requests.post(url, data=json.dumps(body))
+    logger.info(f'Sent user_id, obs_name and key and received {str(response.status_code)}')
+    logger.info(f'Sent user_id and received {str(response.content)}')
+
+    if response.status_code == 200:
+        await message.answer('Стрим успешно запущен.')
+        await group_notifications.send_group_notifications(bot, message.from_user, user_data['obs_name'],
+                                                           'start_stream')
+    elif response.status_code == 404:
+        await message.answer('Стенд с таким именем не найден. Пожалуйста, проверьте правильность написания.')
+    elif response.status_code == 409:
+        if 'in use' in str(response.content):
+            await message.answer(
+                "Данный стенд сейчас занят. Вы можете выбрать другой. Список доступных стендов можете посмотреть командой /check_obs")
+        elif 'unavailable' in str(response.content):
+            await message.answer(
+                """Данный стенд с OBS сейчас недоступен. Вы можете попробовать выбрать другой стенд с OBS из доступных.
+Их список вы можете посмотреть командой /check_obs.""", reply_markup=types.ReplyKeyboardRemove())
+    else:
+        await message.answer("""Произошла ошибка.
+    Вы можете попробовать выбрать другой стенд с OBS из доступных. Их список вы можете посмотреть командой /check_obs
+    Вы также можете нажать /start и попробовать выполнить команду снова.""")
+
+    await message.delete()
+    logger.info(f'Deleted the message')
 
     await state.clear()
 
@@ -920,30 +920,30 @@ async def process_select_date(message: Message, state: FSMContext) -> None:
 
     try:
         date1, date2 = message.text.split('\n')
-        logger.info('Received two strings as dates')
-        # преобразуем теперь даты в нужный формат, если они введены верно
-        date1 = datetime.datetime.strptime(date1, "%m/%d/%Y %H:%M:%S")
-        date2 = datetime.datetime.strptime(date2, "%m/%d/%Y %H:%M:%S")
-        logger.info('Input strings are correct dates')
-        if date1 < date2:
-            # если даты идут в нужном порядке, сохраняем их
-            await state.update_data(date1=date1.strftime('%m/%d/%Y %H:%M:%S'))
-            await state.update_data(date2=date2.strftime('%m/%d/%Y %H:%M:%S'))
-            await state.update_data(type_of_event="stream")
-
-            logger.info('date1<date2, sending data to calendar')
-            await send_data_to_calendar(message, state)
-        else:
-            logger.info('Error: date1>=date2')
-            await message.answer('Пожалуйста, введите корректные данные о датах: сперва начало, затем конец.',
-                                 reply_markup=ikb_cancel)
-            await state.set_state(Form.select_date)
     except Exception as err:
         logger.info('Incorrect input, asked for data again')
         logger.debug(err)
         await message.answer("Пожалуйста, введите данные корректно в формате ММ/ДД/ГГГГ ЧЧ:ММ:СС.",
                              reply_markup=ikb_cancel)
         await state.set_state(Form.select_date)
+    logger.info('Received two strings as dates')
+    # преобразуем теперь даты в нужный формат, если они введены верно
+    date1 = datetime.datetime.strptime(date1, "%m/%d/%Y %H:%M:%S")
+    date2 = datetime.datetime.strptime(date2, "%m/%d/%Y %H:%M:%S")
+    logger.info('Input strings are correct dates')
+    if date1 < date2:
+        # если даты идут в нужном порядке, сохраняем их
+        await state.update_data(date1=date1.strftime('%m/%d/%Y %H:%M:%S'))
+        await state.update_data(date2=date2.strftime('%m/%d/%Y %H:%M:%S'))
+        await state.update_data(type_of_event="stream")
+
+        logger.info('date1<date2, sending data to calendar')
+    else:
+        logger.info('Error: date1>=date2')
+        await message.answer('Пожалуйста, введите корректные данные о датах: сперва начало, затем конец.',
+                             reply_markup=ikb_cancel)
+        await state.set_state(Form.select_date)
+    await send_data_to_calendar(message, state)
 
 
 @router.message(Form.select_name_plan_recording)  # для планирования
@@ -1011,32 +1011,32 @@ async def process_select_date_plan_rec(message: Message, state: FSMContext) -> N
 
     try:
         date1, date2 = message.text.split('\n')
-        logger.info('Received two strings as dates')
-        # преобразуем теперь даты в нужный формат, если они введены верно
-        date1 = datetime.datetime.strptime(date1, "%m/%d/%Y %H:%M:%S")
-        date2 = datetime.datetime.strptime(date2, "%m/%d/%Y %H:%M:%S")
-        logger.info('Input strings are correct dates')
-        if date1 < date2:
-            # если даты идут в нужном порядке, сохраняем их
-            await state.update_data(date1=date1.strftime('%m/%d/%Y %H:%M:%S'))
-            await state.update_data(date2=date2.strftime('%m/%d/%Y %H:%M:%S'))
-
-            logger.info('date1<date2, sending data to calendar')
-            await state.update_data(type_of_event="record")
-            await state.update_data(youtube_server="")
-            await state.update_data(key="")
-            await send_data_to_calendar(message, state)
-        else:
-            logger.info('Error: date1>=date2')
-            await message.answer('Пожалуйста, введите корректные данные о датах: сперва начало, затем конец.',
-                                 reply_markup=ikb_cancel)
-            await state.set_state(Form.select_date_plan_recording)
     except Exception as err:
         logger.info('Incorrect input, asked for data again')
         logger.debug(err)
         await message.answer("Пожалуйста, введите данные корректно в формате ММ/ДД/ГГГГ ЧЧ:ММ:СС.",
                              reply_markup=ikb_cancel)
         await state.set_state(Form.select_date_plan_recording)
+    logger.info('Received two strings as dates')
+    # преобразуем теперь даты в нужный формат, если они введены верно
+    date1 = datetime.datetime.strptime(date1, "%m/%d/%Y %H:%M:%S")
+    date2 = datetime.datetime.strptime(date2, "%m/%d/%Y %H:%M:%S")
+    logger.info('Input strings are correct dates')
+    if date1 < date2:
+        # если даты идут в нужном порядке, сохраняем их
+        await state.update_data(date1=date1.strftime('%m/%d/%Y %H:%M:%S'))
+        await state.update_data(date2=date2.strftime('%m/%d/%Y %H:%M:%S'))
+
+        logger.info('date1<date2, sending data to calendar')
+        await state.update_data(type_of_event="record")
+        await state.update_data(youtube_server="")
+        await state.update_data(key="")
+    else:
+        logger.info('Error: date1>=date2')
+        await message.answer('Пожалуйста, введите корректные данные о датах: сперва начало, затем конец.',
+                             reply_markup=ikb_cancel)
+        await state.set_state(Form.select_date_plan_recording)
+    await send_data_to_calendar(message, state)
 
 
 @router.message(Form.select_name_plan_stream_rec)  # для планирования
@@ -1136,30 +1136,30 @@ async def process_select_date_plan_stream_rec(message: Message, state: FSMContex
 
     try:
         date1, date2 = message.text.split('\n')
-        logger.info('Received two strings as dates')
-        # преобразуем теперь даты в нужный формат, если они введены верно
-        date1 = datetime.datetime.strptime(date1, "%m/%d/%Y %H:%M:%S")
-        date2 = datetime.datetime.strptime(date2, "%m/%d/%Y %H:%M:%S")
-        logger.info('Input strings are correct dates')
-        if date1 < date2:
-            # если даты идут в нужном порядке, сохраняем их
-            await state.update_data(date1=date1.strftime('%m/%d/%Y %H:%M:%S'))
-            await state.update_data(date2=date2.strftime('%m/%d/%Y %H:%M:%S'))
-
-            logger.info('date1<date2, sending data to calendar')
-            await state.update_data(type_of_event="stream_record")
-            await send_data_to_calendar(message, state)
-        else:
-            logger.info('Error: date1>=date2')
-            await message.answer('Пожалуйста, введите корректные данные о датах: сперва начало, затем конец.',
-                                 reply_markup=ikb_cancel)
-            await state.set_state(Form.select_date_plan_stream_rec)
     except Exception as err:
         logger.info('Incorrect input, asked for data again')
         logger.debug(err)
         await message.answer("Пожалуйста, введите данные корректно в формате ММ/ДД/ГГГГ ЧЧ:ММ:СС.",
                              reply_markup=ikb_cancel)
         await state.set_state(Form.select_date_plan_stream_rec)
+    logger.info('Received two strings as dates')
+    # преобразуем теперь даты в нужный формат, если они введены верно
+    date1 = datetime.datetime.strptime(date1, "%m/%d/%Y %H:%M:%S")
+    date2 = datetime.datetime.strptime(date2, "%m/%d/%Y %H:%M:%S")
+    logger.info('Input strings are correct dates')
+    if date1 < date2:
+        # если даты идут в нужном порядке, сохраняем их
+        await state.update_data(date1=date1.strftime('%m/%d/%Y %H:%M:%S'))
+        await state.update_data(date2=date2.strftime('%m/%d/%Y %H:%M:%S'))
+
+        logger.info('date1<date2, sending data to calendar')
+        await state.update_data(type_of_event="stream_record")
+    else:
+        logger.info('Error: date1>=date2')
+        await message.answer('Пожалуйста, введите корректные данные о датах: сперва начало, затем конец.',
+                             reply_markup=ikb_cancel)
+        await state.set_state(Form.select_date_plan_stream_rec)
+    await send_data_to_calendar(message, state)
 
 
 @router.message(Form.stop_stream)
