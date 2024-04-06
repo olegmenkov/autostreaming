@@ -927,8 +927,8 @@ async def process_select_date(message: Message, state: FSMContext) -> None:
         logger.info('Input strings are correct dates')
         if date1 < date2:
             # если даты идут в нужном порядке, сохраняем их
-            await state.update_data(date1=str(date1))
-            await state.update_data(date2=str(date2))
+            await state.update_data(date1=date1.strftime('%m/%d/%Y %H:%M:%S'))
+            await state.update_data(date2=date2.strftime('%m/%d/%Y %H:%M:%S'))
             await state.update_data(type_of_event="stream")
 
             logger.info('date1<date2, sending data to calendar')
@@ -1018,8 +1018,8 @@ async def process_select_date_plan_rec(message: Message, state: FSMContext) -> N
         logger.info('Input strings are correct dates')
         if date1 < date2:
             # если даты идут в нужном порядке, сохраняем их
-            await state.update_data(date1=str(date1))
-            await state.update_data(date2=str(date2))
+            await state.update_data(date1=date1.strftime('%m/%d/%Y %H:%M:%S'))
+            await state.update_data(date2=date2.strftime('%m/%d/%Y %H:%M:%S'))
 
             logger.info('date1<date2, sending data to calendar')
             await state.update_data(type_of_event="record")
@@ -1143,8 +1143,8 @@ async def process_select_date_plan_stream_rec(message: Message, state: FSMContex
         logger.info('Input strings are correct dates')
         if date1 < date2:
             # если даты идут в нужном порядке, сохраняем их
-            await state.update_data(date1=str(date1))
-            await state.update_data(date2=str(date2))
+            await state.update_data(date1=date1.strftime('%m/%d/%Y %H:%M:%S'))
+            await state.update_data(date2=date2.strftime('%m/%d/%Y %H:%M:%S'))
 
             logger.info('date1<date2, sending data to calendar')
             await state.update_data(type_of_event="stream_record")
