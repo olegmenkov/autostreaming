@@ -984,7 +984,7 @@ async def process_select_obs_plan_rec(message: Message, state: FSMContext) -> No
         await state.update_data(port=response_data["port"])
         await state.update_data(password=response_data["password"])
 
-        await message.answer("""Введите дату и время начала и окончания стрима в формате MM/ДД/ГГГГ ЧЧ:ММ:СС.
+        await message.answer("""Введите дату и время начала и окончания записи в формате MM/ДД/ГГГГ ЧЧ:ММ:СС.
 Данные нужно вводить с новой строки -- на первой строке начало, на второй окончание.
 Например:""", reply_markup=types.ReplyKeyboardRemove())
         await message.answer("""05/19/2023 18:53:00
@@ -1109,7 +1109,7 @@ async def process_select_obs_plan_stream_rec(message: Message, state: FSMContext
         await state.update_data(port=response_data["port"])
         await state.update_data(password=response_data["password"])
 
-        await message.answer("""Введите дату и время начала и окончания стрима в формате MM/ДД/ГГГГ ЧЧ:ММ:СС.
+        await message.answer("""Введите дату и время начала и окончания стрима и записи в формате MM/ДД/ГГГГ ЧЧ:ММ:СС.
 Данные нужно вводить с новой строки -- на первой строке начало, на второй окончание.
 Например:""", reply_markup=types.ReplyKeyboardRemove())
         await message.answer("""05/19/2023 18:53:00
