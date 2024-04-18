@@ -696,7 +696,7 @@ async def process_select_server_key(message: Message, state: FSMContext, bot: Bo
 @router.message(Form.start_recording)
 async def process_start_recording(message: Message, state: FSMContext, bot: Bot) -> None:
     """
-    Принимает имя стенда ОБС и ключ трансляции и начинает стрим
+    Принимает имя стенда ОБС и начинает запись
     """
 
     name = message.text
