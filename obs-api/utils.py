@@ -1,7 +1,6 @@
 from typing import Any, Union, Tuple
-from schemas import CalendarData, CalendarDataStop
+from schemas import CalendarRecording, CalendarStopStream, CalendarStartStream
 import simpleobsws
-
 
 DB_CONFIG = {
     "host": 'localhost',
@@ -35,8 +34,8 @@ def intervals_intersection(intervals: list,
     return True, target
 
 
-def config_obsclient_calendar(calendar_data: Union[CalendarData,
-CalendarDataStop]):
+def config_obsclient_calendar(
+        calendar_data: Union[CalendarRecording, CalendarStopStream, CalendarStartStream]):
     ip = calendar_data.ip
     port = calendar_data.port
     password = calendar_data.password
