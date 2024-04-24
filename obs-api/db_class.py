@@ -8,6 +8,8 @@ from typing import Tuple, Union, List, Any
 from sqlalchemy import text, TextClause
 from sqlalchemy.ext.asyncio import create_async_engine
 
+from loguru import logger
+
 
 class Database:
     """
@@ -83,7 +85,7 @@ class Database:
 
     async def check_user_in_db(self, user_id: str) -> bool:
         query = text('SELECT EXISTS(SELECT 1 FROM users WHERE "U_id" = :user_id)')
-        result = await self.execute(query, {'user_id': user_id})
+        result = await self.execute(query, {'user_id': str(user_id)})
         return result.scalar()
 
     async def check_group_in_db(self, group_id: str) -> bool:
@@ -104,21 +106,22 @@ class Database:
 
     async def get_group_obs_info(self, group_id: str, obs_name: str):
         query = text("""
-            SELECT ip, port, password 
+            SELECT "OBS_ip", "OBS_port", "OBS_pswd" 
             FROM groups_obs INNER JOIN obs USING("OBS_id")
             WHERE group_id = :group_id AND "GO_name" = :obs_name
         """)
         result = await self.execute(query, {'group_id': group_id, 'obs_name': obs_name})
-        return await result.fetchone()
+        return result.fetchone()
 
     async def find_obs_groups(self, ip: str, port: str):
         query = text("""
             SELECT group_id 
-            FROM groups_obs INNER JOIN obs
-            WHERE "OBS_ip" = :ip AND "OBS_port" = :port
+            FROM groups_obs WHERE "OBS_id" = (
+                SELECT "OBS_id" from obs WHERE "OBS_ip" = :ip AND "OBS_port" = :port LIMIT 1);
         """)
         result = await self.execute(query, {'ip': ip, 'port': int(port)})
-        return [row[0] for row in await result.fetchall()]
+        rows = result.fetchall()
+        return [row[0] for row in rows]
 
     async def add_users_obs(self, user_id: str, obs_name: str, ip: str, port: str, encrypted_password: str):
         # Check for duplicates
@@ -161,7 +164,18 @@ class Database:
         if result.scalar():
             raise HTTPException(status_code=409, detail=f'Duplicated OBS in group.')
 
-        obs_id = str(uuid.uuid4())
+        find_obs_id_query = text(f"""
+        SELECT "OBS_id" from obs 
+        WHERE "OBS_ip" = :ip AND "OBS_port" = :port;
+        """)
+        result = await self.execute(find_obs_id_query, {'ip': ip, 'port': int(port)})
+        if not result:
+            raise HTTPException(status_code=404, detail=f'OBS with ip {ip} and port {port} not found.')
+
+        for row in result:
+            obs_id = row[0]
+            break
+
         # Insert OBS into group_obs_info
         insert_group_obs_query = text("""
             INSERT INTO groups_obs (group_id, "OBS_id", "GO_name") 
