@@ -116,13 +116,12 @@ async def stop_recording(obsclient: simpleobsws.WebSocketClient):
     await obsclient.disconnect()
 
 
-async def ping_obs(obsclient: simpleobsws.WebSocketClient):
+async def ping_obs(ip: str, port: str, password: str):
     """
-    Принимает объект класса simpleobsws.WebSocketClient (OBS).
-    Отправляет запрос. Если это удаётся сделать, возвращает True
+    Отправляет запрос на получение статистики. Если это удаётся сделать, возвращает True
     Если нет, то False
     """
-    try:
+    '''try:
         await obsclient.connect()
         await obsclient.wait_until_identified()
 
@@ -132,7 +131,12 @@ async def ping_obs(obsclient: simpleobsws.WebSocketClient):
         await obsclient.disconnect()
         return True
     except Exception as err:
-        return False
+        return False'''
+
+    # Вместо формирования вебсокета прям тут - отправляем в приложение по MQTT ip, port, password, тип запроса
+    # приложение формирует obsclient (см. conductor.get_obs_client)
+    # и отправляет в него вебсокет (см. выше)
+    # return должен быть таким же
 
 
 async def ping_stream(obsclient: simpleobsws.WebSocketClient):
@@ -195,12 +199,12 @@ async def recording_time(obsclient: simpleobsws.WebSocketClient):
     return str(ret.responseData['outputTimecode'])
 
 
-async def get_scenes(obsclient: simpleobsws.WebSocketClient):
+async def get_scenes(ip: str, port: str, password: str):
     """
     Возвращает текущую сцену и список остальных
     """
 
-    await obsclient.connect()
+    """await obsclient.connect()
     await obsclient.wait_until_identified()
 
     request = simpleobsws.Request('GetSceneList')
@@ -209,21 +213,32 @@ async def get_scenes(obsclient: simpleobsws.WebSocketClient):
     await obsclient.disconnect()
     all_scenes = [item['sceneName'] for item in ret.responseData['scenes']]
 
-    return {'current': ret.responseData['currentProgramSceneName'], 'all': all_scenes}
+    return {'current': ret.responseData['currentProgramSceneName'], 'all': all_scenes}"""
+
+    # Вместо формирования вебсокета прям тут - отправляем в приложение по MQTT ip, port, password, тип запроса
+    # приложение формирует obsclient (см. conductor.get_obs_client)
+    # и отправляет в него вебсокет (см. выше)
+    # return должен быть таким же
 
 
-async def set_scene(obsclient: simpleobsws.WebSocketClient, scene_name: str):
+async def set_scene(ip: str, port: str, password: str, scene_name: str):
     """
     Устанавливает сцену с именем scene_name в Program выход
     """
 
-    await obsclient.connect()
+    """await obsclient.connect()
     await obsclient.wait_until_identified()
 
     request = simpleobsws.Request('SetCurrentProgramScene', requestData={'sceneName': scene_name})
     ret = await obsclient.call(request)  # запускаем его
 
-    await obsclient.disconnect()
+    await obsclient.disconnect()"""
+
+    # Вместо формирования вебсокета прям тут - отправляем в приложение по MQTT ip, port, password, тип запроса
+    # И requestData!
+    # приложение формирует obsclient (см. conductor.get_obs_client)
+    # и отправляет в него вебсокет (см. выше)
+    # return должен быть таким же
 
 
 async def main():

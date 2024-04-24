@@ -376,10 +376,13 @@ async def add_group_obs(request_body: AddGroupObs):
     return JSONResponse(content=content)
 
 
-@app.get('/ping_obs')
+@app.get('/ping_obs')   # TODO: example 1
 async def ping_obs_handler(request_body: UserPingStreamObs):
-    obs_client = await conductor.get_obs_client(request_body.user_id, request_body.obs_name)
-    if await ping_obs(obs_client):
+    # obs_client = await conductor.get_obs_client(request_body.user_id, request_body.obs_name)
+    # так больше не делаем
+
+    ip, port, password = conductor.get_obs_info(request_body.user_id, request_body.obs_name)
+    if await ping_obs(ip, port, password):
         return JSONResponse(content={'text': 'Obs stand is available'})
     return JSONResponse(status_code=451,
                         content={'text': 'Obs stand is unavailable'})
@@ -486,15 +489,19 @@ async def get_obs_info_handler(request_body: UserObs):
     return JSONResponse(content={'ip': ip, 'port': port, 'password': password})
 
 
-@app.get('/set_scene')
+@app.get('/set_scene')  #TODO: example 2
 async def set_scene_handler(request_body: SetSceneModel):
     """
     Вызывает функцию установки выбранной сцены в Program, если она есть
     :param request_body:
     :return:
     """
-    obsclient = await conductor.get_obs_client(request_body.user_id, request_body.obs_name)
-    if not await ping_obs(obsclient):
+    # obsclient = await conductor.get_obs_client(request_body.user_id, request_body.obs_name)
+    # так больше не делаем
+
+    ip, port, password = conductor.get_obs_info(request_body.user_id, request_body.obs_name)
+
+    if not await ping_obs(ip, port, password):
         return JSONResponse(status_code=409,
                             content='Obs stand is unavailable')
 
@@ -533,7 +540,8 @@ async def set_client_state(request_body: ClientState):
                 "UP" if request_body.state else "DOWN")
 
 
-@app.post('/set_new_ip')
+'''@app.post('/set_new_ip')
 async def set_new_ip_for_client(request_body: IpChange):
     logger.info(f"Ip was changed for {request_body.name} from {request_body.old_ip}:{request_body.port} to"
                 f" {request_body.new_ip}:{request_body.port}")
+'''
