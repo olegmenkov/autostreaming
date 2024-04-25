@@ -48,7 +48,7 @@ def on_connect(client, userdata, flags, rc):
 
 def publish(client, topic, data):
     msg = json.dumps(data)
-    result = mqtt_client.publish(MQTT_TOPIC_Q, msg)
+    result = mqtt_client.publish(MQTT_TOPIC_Q, msg, qos=1)
     status = result[0]
 
     if status:
@@ -86,7 +86,7 @@ async def run_obsws_request(obs_name, request, data=None):
         "data": data
     }
 
-    publish(mqtt_client, MQTT_TOPIC, req)
+    publish(mqtt_client, MQTT_TOPIC_Q, req)
     while not RESPONSE:
         await asyncio.sleep(0.1)
 
