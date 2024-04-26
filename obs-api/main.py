@@ -108,13 +108,19 @@ async def run_obsws_request(obs_name: str, password: str, request: str, data: di
     }
 
     publish(mqtt_client, MQTT_REQUEST_TOPIC + "/" + obs_name, req)
-    while not RESPONSE:
+    time_counter = 0
+    while not RESPONSE and time_counter < 120:
         await asyncio.sleep(0.1)
+        time_counter += 1
 
     local_rep = RESPONSE
     global_lock.release()
     mqtt_client.loop_stop()
-    return local_rep
+
+    if local_rep:
+        return local_rep
+    else:
+        return {"data": None, "error": "time limit exceeded"}
 
 
 @app.post('/register_user')
@@ -576,7 +582,7 @@ async def get_scenes_handler(request_body: GetScenesModel):
     resp = await run_obsws_request(obs_name, password, "GetSceneList")
 
     if resp["error"]:
-        return JSONResponse(status_code=399, content=resp["error"])
+        return JSONResponse(status_code=500, content=resp["error"])
 
     ret = resp["data"]
     all_scenes = [item['sceneName'] for item in ret['scenes']]
