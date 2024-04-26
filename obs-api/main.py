@@ -28,100 +28,12 @@ db = Database(**DB_CONFIG)
 app = FastAPI()
 conductor = Conductor(db)
 
-load_dotenv("../.env")
-# MQTT broker configuration
-MQTT_BROKER_HOST = getenv("MQTT_BROKER_HOST")
-MQTT_BROKER_PORT = int(getenv("MQTT_BROKER_PORT"))
-MQTT_USER = getenv("MQTT_USERNAME")
-MQTT_PASSWORD = getenv("MQTT_PASSWORD")
-MQTT_REQUEST_TOPIC = getenv("MQTT_REQUEST_TOPIC")
-MQTT_RESPONSE_TOPIC = getenv("MQTT_RESPONSE_TOPIC")
-RESPONSE = None
-OBS_NAME = ""
-global_lock = asyncio.Lock()
-
-# Define MQTT client
-mqtt_client = mqtt.Client()
-mqtt_client.username_pw_set(MQTT_USER, MQTT_PASSWORD)
-
 # @app.get('/show_bd')
 # async def show_bd(user_id: UserId):
 #     return JSONResponse(content=db.show_bd())
 
 
 # Define callback functions
-def on_connect(client, userdata, flags, rc):
-    logger.info("Connected with result code "+str(rc))
-    client.subscribe(MQTT_RESPONSE_TOPIC + "/#")
-
-
-def publish(client, topic, data):
-    msg = json.dumps(data)
-    result = client.publish(topic, msg, qos=1)
-    status = result[0]
-
-    if status:
-        logger.info(f"Failed to send message to topic {topic}")
-    else:
-        logger.info("SEND to topic:" + topic)
-
-
-def on_message(client, userdata, msg):
-    global RESPONSE
-
-    resp = json.loads(msg.payload)
-    if msg.topic == MQTT_RESPONSE_TOPIC + "/" + OBS_NAME:
-        RESPONSE = resp
-
-
-# Assign callbacks to client
-mqtt_client.on_connect = on_connect
-mqtt_client.on_message = on_message
-
-# Connect to MQTT broker
-mqtt_client.connect_async(MQTT_BROKER_HOST, MQTT_BROKER_PORT, 60)
-
-
-async def run_obsws_request(obs_name: str, password: str, request: str, data: dict = None) -> dict:
-    '''
-    request form {
-        request = "GetVersion",
-        data = None
-        password = "xxx"
-    }
-
-    response form {
-        data = {...} / None,
-        error = None / "error description"
-    }
-    '''
-    global RESPONSE, OBS_NAME
-    mqtt_client.loop_start()
-    await asyncio.sleep(0.5)
-    await global_lock.acquire()
-    RESPONSE = None
-    OBS_NAME = obs_name
-    req = {
-        "request": request,
-        "data": data,
-        "password": password
-    }
-
-    publish(mqtt_client, MQTT_REQUEST_TOPIC + "/" + obs_name, req)
-    time_counter = 0
-    while not RESPONSE and time_counter < 120:
-        await asyncio.sleep(0.1)
-        time_counter += 1
-
-    local_rep = RESPONSE
-    global_lock.release()
-    mqtt_client.loop_stop()
-
-    if local_rep:
-        return local_rep
-    else:
-        return {"data": None, "error": "time limit exceeded"}
-
 
 @app.post('/register_user')
 async def register_user(user_id: UserId):
@@ -547,9 +459,9 @@ async def set_scene_handler(request_body: SetSceneModel):
 
     ip, port, password = conductor.get_obs_info(request_body.user_id, request_body.obs_name)
 
-    if not await ping_obs(ip, port, password):
-        return JSONResponse(status_code=409,
-                            content='Obs stand is unavailable')
+    # if not await ping_obs(ip, port, password):
+    #     return JSONResponse(status_code=409,
+    #                         content='Obs stand is unavailable')
 
     if str(request_body.scene_name) not in str(await (get_scenes(obsclient))):
         return JSONResponse(status_code=404,
@@ -578,17 +490,12 @@ async def get_scenes_handler(request_body: GetScenesModel):
     # if not await ping_obs(ip, port, password):
     #     return JSONResponse(status_code=409, content='Obs stand is unavailable')
 
-    obs_name = ip + f":{port}"
-    resp = await run_obsws_request(obs_name, password, "GetSceneList")
+    resp = await get_scenes(ip, port, password)
 
-    if resp["error"]:
+    if "error" in resp:
         return JSONResponse(status_code=500, content=resp["error"])
 
-    ret = resp["data"]
-    all_scenes = [item['sceneName'] for item in ret['scenes']]
-    scenes_info = {'current': ret['currentProgramSceneName'], 'all': all_scenes}
-
-    return JSONResponse(content=scenes_info)
+    return JSONResponse(content=resp)
 
 
 '''@app.post('/client_state')
