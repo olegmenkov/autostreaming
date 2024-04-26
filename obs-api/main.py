@@ -568,8 +568,8 @@ async def get_scenes_handler(request_body: GetScenesModel):
 
     ip, port, password = conductor.get_obs_info(request_body.user_id, request_body.obs_name)
 
-    if not await ping_obs(ip, port, password):
-        return JSONResponse(status_code=409, content='Obs stand is unavailable')
+    # if not await ping_obs(ip, port, password):
+    #     return JSONResponse(status_code=409, content='Obs stand is unavailable')
 
     obs_name = ip + f":{port}"
     resp = await run_obsws_request(obs_name, password, "GetSceneList")
