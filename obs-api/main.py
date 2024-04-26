@@ -28,7 +28,7 @@ db = Database(**DB_CONFIG)
 app = FastAPI()
 conductor = Conductor(db)
 
-load_dotenv()
+load_dotenv("../.env")
 # MQTT broker configuration
 MQTT_BROKER_HOST = getenv("MQTT_BROKER_HOST")
 MQTT_BROKER_PORT = int(getenv("MQTT_BROKER_PORT"))
