@@ -553,6 +553,7 @@ async def set_scene_handler(request_body: SetSceneModel):
 
     return JSONResponse(content='The current scene is changed')
 
+
 @app.get('/get_scenes')
 async def get_scenes_handler(request_body: GetScenesModel):
     """
@@ -566,7 +567,7 @@ async def get_scenes_handler(request_body: GetScenesModel):
     # obs_client = await conductor.get_obs_client(request_body.user_id, request_body.obs_name)
     # так больше не делаем
 
-    ip, port, password = conductor.get_obs_info(request_body.user_id, request_body.obs_name)
+    ip, port, password = await conductor.get_obs_info(request_body.user_id, request_body.obs_name)
 
     # if not await ping_obs(ip, port, password):
     #     return JSONResponse(status_code=409, content='Obs stand is unavailable')
