@@ -15,53 +15,62 @@ from schemas import UsersAddObs, UserDelObs, UsersEditObs, CheckObs, StartStream
     GetScenesModel, SetSceneModel, AddGroup, AddGroupMember, DeleteGroupMember, AddGroupObs, \
     EditGroupObs, DeleteGroupObs, CheckGroupObs, CheckObsGroups, ClientState, IpChange
 from utils import config_obsclient_calendar, DB_CONFIG
-
 import asyncio
 import json
 from fastapi import FastAPI
 import paho.mqtt.client as mqtt
+from dotenv import load_dotenv
+from os import getenv
 
 
+db = Database(**DB_CONFIG)
+# new_db = Database(**DB_CONFIG)
+app = FastAPI()
+conductor = Conductor(db)
+
+load_dotenv()
 # MQTT broker configuration
-MQTT_BROKER_HOST = "172.18.130.40"
-MQTT_BROKER_PORT = 1883
-MQTT_TOPIC = "autostream/#"
-MQTT_TOPIC_Q = "autostream/172.18.191.15:4455/requests"
+MQTT_BROKER_HOST = getenv("MQTT_BROKER_HOST")
+MQTT_BROKER_PORT = int(getenv("MQTT_BROKER_PORT"))
+MQTT_USER = getenv("MQTT_USERNAME")
+MQTT_PASSWORD = getenv("MQTT_PASSWORD")
+MQTT_REQUEST_TOPIC = getenv("MQTT_REQUEST_TOPIC")
+MQTT_RESPONSE_TOPIC = getenv("MQTT_RESPONSE_TOPIC")
 RESPONSE = None
-OBS_NAME = "172.18.191.15:4455"
+OBS_NAME = None
 global_lock = asyncio.Lock()
 
 # Define MQTT client
 mqtt_client = mqtt.Client()
-mqtt_client.username_pw_set("recorder", "recorder2020")
+mqtt_client.username_pw_set(MQTT_USER, MQTT_PASSWORD)
 
-# async def _wait_for_cond(cond, func):
-#     async with cond:
-#         await cond.wait_for(func)
+# @app.get('/show_bd')
+# async def show_bd(user_id: UserId):
+#     return JSONResponse(content=db.show_bd())
 
 
 # Define callback functions
 def on_connect(client, userdata, flags, rc):
-    print("Connected with result code "+str(rc))
-    client.subscribe(MQTT_TOPIC)
+    logger.info("Connected with result code "+str(rc))
+    client.subscribe(MQTT_RESPONSE_TOPIC)
 
 
 def publish(client, topic, data):
     msg = json.dumps(data)
-    result = mqtt_client.publish(MQTT_TOPIC_Q, msg, qos=1)
+    result = client.publish(topic, msg, qos=1)
     status = result[0]
 
     if status:
-        print(f"Failed to send message to topic {MQTT_TOPIC_Q}")
+        logger.info(f"Failed to send message to topic {topic}")
     else:
-        print("SEND to topic:" + MQTT_TOPIC_Q)
+        logger.info("SEND to topic:" + topic)
 
 
 def on_message(client, userdata, msg):
     global RESPONSE
 
     resp = json.loads(msg.payload)
-    if msg.topic == "autostream/" + OBS_NAME + "/responses":
+    if msg.topic == RESPONSE + "/" + OBS_NAME:
         RESPONSE = resp
 
 
@@ -71,22 +80,34 @@ mqtt_client.on_message = on_message
 
 # Connect to MQTT broker
 mqtt_client.connect_async(MQTT_BROKER_HOST, MQTT_BROKER_PORT, 60)
-async def run_obsws_request(obs_name, request, data=None):
-    global RESPONSE
-    local_rep = None
+
+
+async def run_obsws_request(obs_name: str, password: str, request: str, data: dict = None) -> dict:
+    '''
+    request form {
+        request = "GetVersion",
+        data = None
+        password = "xxx"
+    }
+
+    response form {
+        data = {...} / None,
+        error = None / "error description"
+    }
+    '''
+    global RESPONSE, OBS_NAME
     mqtt_client.loop_start()
     await asyncio.sleep(0.5)
     await global_lock.acquire()
     RESPONSE = None
-    # REQ_ID = hash(OBS_NAME)
+    OBS_NAME = obs_name
     req = {
-        # "req_id": REQ_ID,
-        "obs_name": obs_name,
         "request": request,
-        "data": data
+        "data": data,
+        "password": password
     }
 
-    publish(mqtt_client, MQTT_TOPIC_Q, req)
+    publish(mqtt_client, MQTT_REQUEST_TOPIC, req)
     while not RESPONSE:
         await asyncio.sleep(0.1)
 
@@ -94,16 +115,6 @@ async def run_obsws_request(obs_name, request, data=None):
     global_lock.release()
     mqtt_client.loop_stop()
     return local_rep
-
-db = Database(**DB_CONFIG)
-# new_db = Database(**DB_CONFIG)
-app = FastAPI()
-conductor = Conductor(db)
-
-
-# @app.get('/show_bd')
-# async def show_bd(user_id: UserId):
-#     return JSONResponse(content=db.show_bd())
 
 
 @app.post('/register_user')
@@ -552,22 +563,32 @@ async def get_scenes_handler(request_body: GetScenesModel):
     :param request_body:
     :return:
     """
-    # obsclient = await conductor.get_obs_client(request_body.user_id, request_body.obs_name)
-    # if not await ping_obs(obsclient):
-    #     return JSONResponse(status_code=409,
-    #                         content='Obs stand is unavailable')
-    ret = await run_obsws_request(OBS_NAME, "GetSceneList")
+    # obs_client = await conductor.get_obs_client(request_body.user_id, request_body.obs_name)
+    # так больше не делаем
+
+    ip, port, password = conductor.get_obs_info(request_body.user_id, request_body.obs_name)
+
+    if not await ping_obs(ip, port, password):
+        return JSONResponse(status_code=409, content='Obs stand is unavailable')
+
+    obs_name = ip + f":{port}"
+    resp = await run_obsws_request(obs_name, password, "GetSceneList")
+
+    if resp["error"]:
+        return JSONResponse(status_code=399, content=resp["error"])
+
+    ret = resp["data"]
     all_scenes = [item['sceneName'] for item in ret['scenes']]
     scenes_info = {'current': ret['currentProgramSceneName'], 'all': all_scenes}
 
     return JSONResponse(content=scenes_info)
 
 
-@app.post('/client_state')
+'''@app.post('/client_state')
 async def set_client_state(request_body: ClientState):
     logger.info(request_body.time + ": " + "State of " + request_body.name + " is " +
                 "UP" if request_body.state else "DOWN")
-
+'''
 
 '''@app.post('/set_new_ip')
 async def set_new_ip_for_client(request_body: IpChange):
