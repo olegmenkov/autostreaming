@@ -320,14 +320,12 @@ async def set_scene(ip: str, port: str, password: str, scene_name: str):
     Устанавливает сцену с именем scene_name в Program выход
     """
 
-    """await obsclient.connect()
-    await obsclient.wait_until_identified()
+    obs_name = ip + f":{port}"
+    request = 'SetCurrentProgramScene'
+    data = {'sceneName': scene_name}
+    resp = await run_obsws_request(obs_name, password, request, data)
 
-    request = simpleobsws.Request('SetCurrentProgramScene', requestData={'sceneName': scene_name})
-    ret = await obsclient.call(request)  # запускаем его
-
-    await obsclient.disconnect()"""
-
+    return resp
     # Вместо формирования вебсокета прям тут - отправляем в приложение по MQTT ip, port, password, тип запроса
     # И requestData!
     # приложение формирует obsclient (см. conductor.get_obs_client)

@@ -463,11 +463,14 @@ async def set_scene_handler(request_body: SetSceneModel):
     #     return JSONResponse(status_code=409,
     #                         content='Obs stand is unavailable')
 
-    if str(request_body.scene_name) not in str(await (get_scenes(obsclient))):
+    if str(request_body.scene_name) not in str(await (get_scenes(ip, port, password))):
         return JSONResponse(status_code=404,
                             content='There is no such scene')
 
-    await set_scene(obsclient, request_body.scene_name)
+    resp = await set_scene(ip, port, password, request_body.scene_name)
+
+    if resp["error"]:
+        return JSONResponse(status_code=500, content=resp["error"])
 
     return JSONResponse(content='The current scene is changed')
 
