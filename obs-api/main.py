@@ -15,12 +15,9 @@ from schemas import UsersAddObs, UserDelObs, UsersEditObs, CheckObs, StartStream
     GetScenesModel, SetSceneModel, AddGroup, AddGroupMember, DeleteGroupMember, AddGroupObs, \
     EditGroupObs, DeleteGroupObs, CheckGroupObs, CheckObsGroups, ClientState, IpChange
 from utils import config_obsclient_calendar, DB_CONFIG
-import asyncio
-import json
+
 from fastapi import FastAPI
-import paho.mqtt.client as mqtt
-from dotenv import load_dotenv
-from os import getenv
+
 
 
 db = Database(**DB_CONFIG)
