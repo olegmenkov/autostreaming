@@ -37,7 +37,7 @@ MQTT_PASSWORD = getenv("MQTT_PASSWORD")
 MQTT_REQUEST_TOPIC = getenv("MQTT_REQUEST_TOPIC")
 MQTT_RESPONSE_TOPIC = getenv("MQTT_RESPONSE_TOPIC")
 RESPONSE = None
-OBS_NAME = None
+OBS_NAME = ""
 global_lock = asyncio.Lock()
 
 # Define MQTT client
@@ -52,7 +52,7 @@ mqtt_client.username_pw_set(MQTT_USER, MQTT_PASSWORD)
 # Define callback functions
 def on_connect(client, userdata, flags, rc):
     logger.info("Connected with result code "+str(rc))
-    client.subscribe(MQTT_RESPONSE_TOPIC)
+    client.subscribe(MQTT_RESPONSE_TOPIC + "/#")
 
 
 def publish(client, topic, data):
@@ -70,7 +70,7 @@ def on_message(client, userdata, msg):
     global RESPONSE
 
     resp = json.loads(msg.payload)
-    if msg.topic == RESPONSE + "/" + OBS_NAME:
+    if msg.topic == MQTT_RESPONSE_TOPIC + "/" + OBS_NAME:
         RESPONSE = resp
 
 
@@ -107,7 +107,7 @@ async def run_obsws_request(obs_name: str, password: str, request: str, data: di
         "password": password
     }
 
-    publish(mqtt_client, MQTT_REQUEST_TOPIC, req)
+    publish(mqtt_client, MQTT_REQUEST_TOPIC + "/" + obs_name, req)
     while not RESPONSE:
         await asyncio.sleep(0.1)
 
