@@ -1,7 +1,6 @@
 import asyncio
 from loguru import logger
 import simpleobsws
-import time
 import json
 import paho.mqtt.client as mqtt
 from dotenv import load_dotenv
@@ -98,8 +97,7 @@ mqtt_client.on_message = on_message
 mqtt_client.connect_async(MQTT_BROKER_HOST, MQTT_BROKER_PORT, 60)
 
 
-async def start_youtube_stream(obsclient: simpleobsws.WebSocketClient,
-                               key: str, youtube_server: str = None):
+async def start_youtube_stream(ip, port, password, key: str, youtube_server: str = None):
     """
     Принимает объект класса simpleobsws.WebSocketClient (OBS) и
     ключ трансляции. Начинает стрим на этой OBS с этим ключом
@@ -107,49 +105,41 @@ async def start_youtube_stream(obsclient: simpleobsws.WebSocketClient,
 
     if youtube_server is None:
         youtube_server = "rtmp://a.rtmp.youtube.com/live2"
-    await obsclient.connect()
-    await obsclient.wait_until_identified()
 
+    obs_name = ip + f":{port}"
+    request = 'SetStreamServiceSettings'
     # установим нужные настройки стрима:
-    request = simpleobsws.Request('SetStreamServiceSettings',
-                                  requestData={
-                                      "streamServiceSettings":
-                                          {"bwtest": False,
-                                           "key": key,
-                                           "server": youtube_server,
-                                           "service": "YouTube - RTMPS"},
-                                      "streamServiceType": "rtmp_common"})
+    data = {"streamServiceSettings":
+                {"bwtest": False,
+                    "key": key,
+                    "server": youtube_server,
+                    "service": "YouTube - RTMPS"},
+            "streamServiceType": "rtmp_common"}
+    resp = await run_obsws_request(obs_name, password, request, data)
 
-    ret = await obsclient.call(request)  # отправляем запрос
-    if ret.ok():  # проверка
-        logger.info("Request 'start stream' succeeded!")
+    if resp["error"]:
+        return resp
 
-    request = simpleobsws.Request('StartStream')  # запрос "начать стрим"
-    ret = await obsclient.call(request)  # запускаем его
-    if ret.ok():  # проверка
-        logger.info("Request 'start stream' succeeded!")
+    request = 'StartStream'
+    resp = await run_obsws_request(obs_name, password, request)
 
-    await obsclient.disconnect()
+    return resp
 
 
-async def stop_youtube_stream(obsclient: simpleobsws.WebSocketClient):
+async def stop_youtube_stream(ip, port, password):
     """
     Принимает объект класса simpleobsws.WebSocketClient (OBS).
     Заканчивает стрим на этой OBS
     """
-    await obsclient.connect()
-    await obsclient.wait_until_identified()
 
-    request = simpleobsws.Request('StopStream')  # запрос "остановить стрим"
-    ret = await obsclient.call(request)  # запускаем его
-    if ret.ok():  # проверка
-        logger.info("Request 'stop stream' succeeded!")
+    obs_name = ip + f":{port}"
+    request = 'StopStream'
+    resp = await run_obsws_request(obs_name, password, request)
 
-    await obsclient.disconnect()
+    return resp
 
 
-async def set_stream_parameters(obsclient: simpleobsws.WebSocketClient,
-                                key: str, youtube_server: str = None):
+async def set_stream_parameters(ip, port, password, key: str, youtube_server: str = None):
     """
     Принимает объект класса simpleobsws.WebSocketClient (OBS) и
     ключ трансляции. Устанавливает настройки этой OBS: тип трансляции,
@@ -157,57 +147,45 @@ async def set_stream_parameters(obsclient: simpleobsws.WebSocketClient,
     """
     if youtube_server is None:
         youtube_server = "rtmp://a.rtmp.youtube.com/live2"
-    await obsclient.connect()
-    await obsclient.wait_until_identified()
 
+    obs_name = ip + f":{port}"
+    request = 'SetStreamServiceSettings'
     # установим нужные настройки стрима:
-    request = simpleobsws.Request('SetStreamServiceSettings', requestData={
-        "streamServiceSettings":
-            {"bwtest": False,
-             "key": key,
-             "server": youtube_server,
-             "service": "YouTube - RTMPS"},
-        "streamServiceType": "rtmp_common"})
+    data = {"streamServiceSettings":
+                {"bwtest": False,
+                    "key": key,
+                    "server": youtube_server,
+                    "service": "YouTube - RTMPS"},
+            "streamServiceType": "rtmp_common"}
+    resp = await run_obsws_request(obs_name, password, request, data)
 
-    ret = await obsclient.call(request)  # отправляем запрос
-    if ret.ok():  # проверка
-        logger.info("Request 'start stream' succeeded!")
-
-    await obsclient.disconnect()
+    return resp
 
 
-async def start_recording(obsclient: simpleobsws.WebSocketClient):
+async def start_recording(ip: str, port: str, password: str):
     """
     Принимает объект класса simpleobsws.WebSocketClient (OBS).
     Начинает запись на этой OBS.
     """
 
-    await obsclient.connect()
-    await obsclient.wait_until_identified()
+    obs_name = ip + f":{port}"
+    request = 'StartRecord'
+    resp = await run_obsws_request(obs_name, password, request)
 
-    request = simpleobsws.Request('StartRecord')  # запрос "начать стрим"
-    ret = await obsclient.call(request)  # запускаем его
-    if ret.ok():  # проверка
-        logger.info("Request 'start record' succeeded!")
-
-    await obsclient.disconnect()
+    return resp
 
 
-async def stop_recording(obsclient: simpleobsws.WebSocketClient):
+async def stop_recording(ip: str, port: str, password: str):
     """
     Принимает объект класса simpleobsws.WebSocketClient (OBS).
     Прекращает запись на этой OBS.
     """
 
-    await obsclient.connect()
-    await obsclient.wait_until_identified()
+    obs_name = ip + f":{port}"
+    request = 'StopRecord'
+    resp = await run_obsws_request(obs_name, password, request)
 
-    request = simpleobsws.Request('StopRecord')  # запрос "начать стрим"
-    ret = await obsclient.call(request)  # запускаем его
-    if ret.ok():  # проверка
-        logger.info("Request 'stop record' succeeded!")
-
-    await obsclient.disconnect()
+    return resp
 
 
 async def ping_obs(ip: str, port: str, password: str):
@@ -233,64 +211,63 @@ async def ping_obs(ip: str, port: str, password: str):
     # return должен быть таким же
 
 
-async def ping_stream(obsclient: simpleobsws.WebSocketClient):
+async def ping_stream(ip, port, password) -> bool:
     """
     Проверяет статус стрима на обс-клиенте
     Возвращает True, если стрим идёт, и False -- если нет
     """
-    await obsclient.connect()
-    await obsclient.wait_until_identified()
+    obs_name = ip + f":{port}"
+    request = 'GetStreamStatus'
+    resp = await run_obsws_request(obs_name, password, request)
 
-    request = simpleobsws.Request('GetStreamStatus')  # запрос "посмотреть статистику"
-    ret = await obsclient.call(request)  # запускаем его
-    await obsclient.disconnect()
+    if resp["error"]:
+        return False
 
-    return ret.responseData['outputActive']
+    return resp["data"]['outputActive']
 
 
-async def stream_time(obsclient: simpleobsws.WebSocketClient):
+async def stream_time(ip, port, password):
     """
     Проверяет время записи на обс-клиенте
     """
-    await obsclient.connect()
-    await obsclient.wait_until_identified()
+    obs_name = ip + f":{port}"
+    request = 'GetStreamStatus'
+    resp = await run_obsws_request(obs_name, password, request)
 
-    request = simpleobsws.Request('GetStreamStatus')  # запрос "посмотреть статистику"
-    ret = await obsclient.call(request)  # запускаем его
+    if resp["error"]:
+        return resp
 
-    await obsclient.disconnect()
-
-    return str(ret.responseData['outputTimecode'])
+    return resp["data"]['outputTimecode']
 
 
-async def ping_recording(obsclient: simpleobsws.WebSocketClient):
+async def ping_recording(ip, port, password) -> bool:
     """
     Проверяет статус записи на обс-клиенте
     Возвращает True, если запись идёт, и False -- если нет
     """
-    await obsclient.connect()
-    await obsclient.wait_until_identified()
+    obs_name = ip + f":{port}"
+    request = 'GetRecordStatus'
+    resp = await run_obsws_request(obs_name, password, request)
 
-    request = simpleobsws.Request('GetRecordStatus')  # запрос "посмотреть статистику"
-    ret = await obsclient.call(request)  # запускаем его
+    if resp["error"]:
+        return False
 
-    await obsclient.disconnect()
-
-    return ret.responseData['outputActive']
+    return resp["data"]['outputActive']
 
 
-async def recording_time(obsclient: simpleobsws.WebSocketClient):
+async def recording_time(ip: str, port: str, password: str):
     """
     Проверяет время записи на обс-клиенте
     """
-    await obsclient.connect()
-    await obsclient.wait_until_identified()
 
-    request = simpleobsws.Request('GetRecordStatus')  # запрос "посмотреть статистику"
-    ret = await obsclient.call(request)  # запускаем его
+    obs_name = ip + f":{port}"
+    request = 'GetRecordStatus'
+    resp = await run_obsws_request(obs_name, password, request)
 
-    await obsclient.disconnect()
-    return str(ret.responseData['outputTimecode'])
+    if resp["error"]:
+        return resp
+
+    return resp["data"]['outputTimecode']
 
 
 async def get_scenes(ip: str, port: str, password: str):

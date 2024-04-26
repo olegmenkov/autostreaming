@@ -60,22 +60,28 @@ async def start_stream(request_body: StartStreamModel):
     :param request_body:
     :return:
     """
-    obsclient = await conductor.get_obs_client(request_body.user_id, request_body.obs_name)
-    flag = await ping_obs(obsclient)
-    if not flag:
+    ip, port, password = await conductor.get_obs_info(request_body.user_id, request_body.obs_name)
+
+    if not await ping_obs(ip, port, password):
         return JSONResponse(status_code=409,
                             content='Obs stand is unavailable')
-    flag = await ping_stream(obsclient)
-    if flag:
+
+    if await ping_stream(ip, port, password):
         return JSONResponse(status_code=409,
                             content='Obs stand with this ip currently in use')
-    await set_stream_parameters(obsclient, request_body.key,
-                                request_body.youtube_server)
-    await start_youtube_stream(obsclient, request_body.key,
-                               request_body.youtube_server)
-    logger.info(f"Started stream on obs "
-                f"{obsclient.url.split('ws://')[1].split(':')[0]} by user "
-                f"{request_body.user_id}")
+
+    resp = await set_stream_parameters(ip, port, password, request_body.key, request_body.youtube_server)
+
+    if resp["error"]:
+        return JSONResponse(status_code=500, content=resp["error"])
+
+    resp = await start_youtube_stream(ip, port, password, request_body.key, request_body.youtube_server)
+    if resp["error"]:
+        return JSONResponse(status_code=500, content=resp["error"])
+
+    # logger.info(f"Started stream on obs "
+    #             f"{obsclient.url.split('ws://')[1].split(':')[0]} by user "
+    #             f"{request_body.user_id}")
     return JSONResponse(content={'response': "started stream successfully"})
 
 
@@ -89,17 +95,21 @@ async def stop_stream(request_body: StopStreamModel):
     :return:
     """
     logger.info('Stopping stream')
-    obsclient = await conductor.get_obs_client(request_body.user_id, request_body.obs_name)
+    ip, port, password = await conductor.get_obs_info(request_body.user_id, request_body.obs_name)
 
-    flag = await ping_obs(obsclient)
-    if not flag:
+    if await ping_obs(ip, port, password):
         return JSONResponse(status_code=409,
                             content='Obs stand is unavailable')
-    if not await ping_stream(obsclient):
+
+    if not await ping_stream(ip, port, password):
         return JSONResponse(status_code=409,
                             content={'response': "Stream not running"})
 
-    await stop_youtube_stream(obsclient)
+    resp = await stop_youtube_stream(ip, port, password)
+
+    if resp["error"]:
+        return JSONResponse(status_code=500, content=resp["error"])
+
     logger.info(f'Stream stopped successfully by {request_body.user_id}')
     return JSONResponse(content={'response': "stopped successfully"})
 
@@ -114,18 +124,22 @@ async def start_recording_handler(request_body: StartRecordingModel):
     :param request_body:
     :return:
     """
-    obsclient = await conductor.get_obs_client(request_body.user_id, request_body.obs_name)
-    if not await ping_obs(obsclient):
+    ip, port, password = await conductor.get_obs_info(request_body.user_id, request_body.obs_name)
+    if not await ping_obs(ip, port, password):
         return JSONResponse(status_code=409,
                             content='Obs stand is unavailable')
 
-    if await ping_recording(obsclient):
+    if await ping_recording(ip, port, password):
         return JSONResponse(status_code=409,
                             content='Obs stand with this ip currently in use')
-    await start_recording(obsclient)
-    logger.info(f"Started recording on obs "
-                f"{obsclient.url.split('ws://')[1].split(':')[0]} by user "
-                f"{request_body.user_id}")
+
+    resp = await stop_recording(ip, port, password)
+
+    if resp["error"]:
+        return JSONResponse(status_code=500, content=resp["error"])
+    # logger.info(f"Started recording on obs "
+    #             f"{obsclient.url.split('ws://')[1].split(':')[0]} by user "
+    #             f"{request_body.user_id}")
     return JSONResponse(content={'response': "started recording successfully"})
 
 
@@ -139,19 +153,24 @@ async def stop_recording_handler(request_body: StopRecordingModel):
     :param request_body:
     :return:
     """
-    obsclient = await conductor.get_obs_client(request_body.user_id, request_body.obs_name)
-    if not await ping_obs(obsclient):
+    ip, port, password = await conductor.get_obs_info(request_body.user_id, request_body.obs_name)
+
+    if not await ping_obs(ip, port, password):
         return JSONResponse(status_code=409,
                             content='Obs stand is unavailable')
 
-    flag = await ping_recording(obsclient)
-    if not flag:
+    if not await ping_recording(ip, port, password):
         return JSONResponse(status_code=409,
                             content=f'The recording is not running')
-    await stop_recording(obsclient)
-    logger.info(f"Started recording on obs "
-                f"{obsclient.url.split('ws://')[1].split(':')[0]} by user "
-                f"{request_body.user_id}")
+
+    resp = await stop_recording(ip, port, password)
+
+    if resp["error"]:
+        return JSONResponse(status_code=500, content=resp["error"])
+
+    # logger.info(f"Started recording on obs "
+    #             f"{ip, port, password.url.split('ws://')[1].split(':')[0]} by user "
+    #             f"{request_body.user_id}")
     return JSONResponse(content={'response': "started recording successfully"})
 
 
@@ -335,10 +354,10 @@ async def add_group_obs(request_body: AddGroupObs):
 
 @app.get('/ping_obs')   # TODO: example 1
 async def ping_obs_handler(request_body: UserPingStreamObs):
-    # obs_client = await conductor.get_obs_client(request_body.user_id, request_body.obs_name)
+    # ip, port, password = await conductor.get_obs_info(request_body.user_id, request_body.obs_name)
     # так больше не делаем
 
-    ip, port, password = conductor.get_obs_info(request_body.user_id, request_body.obs_name)
+    ip, port, password = await conductor.get_obs_info(request_body.user_id, request_body.obs_name)
 
     if await ping_obs(ip, port, password):
         return JSONResponse(content={'text': 'Obs stand is available'})
@@ -352,10 +371,18 @@ async def ping_stream_handler(request_body: UserPingStreamObs):
     Endpoint для проверки, работает ли стрим
     :return:
     """
-    obs_client = await conductor.get_obs_client(request_body.user_id, request_body.obs_name)
-    if await ping_obs(obs_client):
-        if await ping_stream(obs_client):
-            time = str(await stream_time(obs_client))
+    ip, port, password = await conductor.get_obs_info(request_body.user_id, request_body.obs_name)
+    if await ping_obs(ip, port, password):
+        if await ping_stream(ip, port, password):
+            resp = await stream_time(ip, port, password)
+    
+            if "error" in resp:
+                logger.info(resp["error"])
+                return JSONResponse(status_code=500, content=resp["error"])
+            else:
+                time = str(resp)
+                logger.info(time)
+                
             return JSONResponse(content={'text': 'Stream on obs is running', 'stream_time': time})
         return JSONResponse(status_code=451,
                             content={'text': 'Stream on obs in not running'})
@@ -370,11 +397,18 @@ async def ping_recording_handler(request_body: UserPingStreamObs):
     Endpoint для проверки, работает ли запись
     :return:
     """
-    obs_client = await conductor.get_obs_client(request_body.user_id, request_body.obs_name)
-    if await ping_obs(obs_client):
-        if await ping_recording(obs_client):
-            time = str(await recording_time(obs_client))
-            logger.info(time)
+    ip, port, password = await conductor.get_obs_info(request_body.user_id, request_body.obs_name)
+    if await ping_obs(ip, port, password):
+        if await ping_recording(ip, port, password):
+            resp = await recording_time(ip, port, password)
+            
+            if "error" in resp:
+                logger.info(resp["error"])
+                return JSONResponse(status_code=500, content=resp["error"])
+            else:
+                time = str(resp)
+                logger.info(time)
+                
             return JSONResponse(content={'text': 'Recording on obs is running', 'recording_time': time})
         return JSONResponse(status_code=451,
                             content={'text': 'Recording on obs in not running'})
@@ -454,7 +488,7 @@ async def set_scene_handler(request_body: SetSceneModel):
     :param request_body:
     :return:
     """
-    # obsclient = await conductor.get_obs_client(request_body.user_id, request_body.obs_name)
+    # ip, port, password = await conductor.get_obs_info(request_body.user_id, request_body.obs_name)
     # так больше не делаем
 
     ip, port, password = await conductor.get_obs_info(request_body.user_id, request_body.obs_name)
@@ -485,7 +519,7 @@ async def get_scenes_handler(request_body: GetScenesModel):
     :param request_body:
     :return:
     """
-    # obs_client = await conductor.get_obs_client(request_body.user_id, request_body.obs_name)
+    # ip, port, password = await conductor.get_obs_info(request_body.user_id, request_body.obs_name)
     # так больше не делаем
 
     ip, port, password = await conductor.get_obs_info(request_body.user_id, request_body.obs_name)
