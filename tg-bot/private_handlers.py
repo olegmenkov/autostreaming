@@ -734,6 +734,10 @@ async def process_start_recording(message: Message, state: FSMContext, bot: Bot)
             await message.answer(
                 "Данный стенд сейчас занят. Вы можете выбрать другой. Список доступных стендов можете посмотреть командой /check_obs",
                 reply_markup=types.ReplyKeyboardRemove())
+    elif response.status_code == 503:
+        await message.answer(
+            """Данный стенд с OBS сейчас недоступен. Вы можете попробовать выбрать другой стенд с OBS из доступных.
+Их список вы можете посмотреть командой /check_obs.""", reply_markup=types.ReplyKeyboardRemove())
 
     else:
         await message.answer("""Произошла ошибка.
