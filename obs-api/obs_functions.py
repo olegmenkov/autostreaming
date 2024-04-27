@@ -193,17 +193,11 @@ async def ping_obs(ip: str, port: str, password: str):
     Отправляет запрос на получение статистики. Если это удаётся сделать, возвращает True
     Если нет, то False
     """
-    '''try:
-        await obsclient.connect()
-        await obsclient.wait_until_identified()
+    obs_name = ip + f":{port}"
+    request = 'GetStats'
+    resp = await run_obsws_request(obs_name, password, request)
 
-        request = simpleobsws.Request('GetStats')  # запрос "посмотреть статистику"
-        ret = await obsclient.call(request)  # запускаем его
-
-        await obsclient.disconnect()
-        return True
-    except Exception as err:
-        return False'''
+    return resp
 
     # Вместо формирования вебсокета прям тут - отправляем в приложение по MQTT ip, port, password, тип запроса
     # приложение формирует obsclient (см. conductor.get_obs_client)
@@ -211,7 +205,7 @@ async def ping_obs(ip: str, port: str, password: str):
     # return должен быть таким же
 
 
-async def ping_stream(ip, port, password) -> bool:
+async def ping_stream(ip, port, password):
     """
     Проверяет статус стрима на обс-клиенте
     Возвращает True, если стрим идёт, и False -- если нет
@@ -221,9 +215,9 @@ async def ping_stream(ip, port, password) -> bool:
     resp = await run_obsws_request(obs_name, password, request)
 
     if resp["error"]:
-        return False
+        return resp
 
-    return resp["data"]['outputActive']
+    return {"data": resp["data"]['outputActive'], "error": None}
 
 
 async def stream_time(ip, port, password):
@@ -237,10 +231,10 @@ async def stream_time(ip, port, password):
     if resp["error"]:
         return resp
 
-    return resp["data"]['outputTimecode']
+    return {"data": resp["data"]['outputTimecode'], "error": None}
 
 
-async def ping_recording(ip, port, password) -> bool:
+async def ping_recording(ip, port, password):
     """
     Проверяет статус записи на обс-клиенте
     Возвращает True, если запись идёт, и False -- если нет
@@ -250,9 +244,9 @@ async def ping_recording(ip, port, password) -> bool:
     resp = await run_obsws_request(obs_name, password, request)
 
     if resp["error"]:
-        return False
+        return resp
 
-    return resp["data"]['outputActive']
+    return {"data": resp["data"]['outputActive'], "error": None}
 
 
 async def recording_time(ip: str, port: str, password: str):
@@ -267,7 +261,7 @@ async def recording_time(ip: str, port: str, password: str):
     if resp["error"]:
         return resp
 
-    return resp["data"]['outputTimecode']
+    return {"data": resp["data"]['outputTimecode'], "error": None}
 
 
 async def get_scenes(ip: str, port: str, password: str):
@@ -284,7 +278,8 @@ async def get_scenes(ip: str, port: str, password: str):
 
     ret = resp["data"]
     all_scenes = [item['sceneName'] for item in ret['scenes']]
-    return {'current': ret['currentProgramSceneName'], 'all': all_scenes}
+
+    return {"data": {'current': ret['currentProgramSceneName'], 'all': all_scenes}, "error": None}
 
     # Вместо формирования вебсокета прям тут - отправляем в приложение по MQTT ip, port, password, тип запроса
     # приложение формирует obsclient (см. conductor.get_obs_client)
