@@ -347,6 +347,7 @@ async def check_obs(message: Message, state: FSMContext):
 
     if response.status_code == 200:
         data = response.json()
+        logger.info(f'DATA:\n {data}')
         if len(data) == 0:
             answer = 'У вас ещё нет добавленных стендов с OBS. Вы можете добавить их командой /add_obs.'
         else:
