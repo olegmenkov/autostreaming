@@ -390,7 +390,7 @@ async def ping_obs_handler(request_body: UserPingStreamObs):
     resp = await ping_obs(ip, port, password)
 
     if resp["error"]:
-        return JSONResponse(status_code=451, content={'text': 'Obs stand is unavailable'})
+        return JSONResponse(status_code=503, content={'text': 'Obs stand is unavailable'})
 
     return JSONResponse(content={'text': 'Obs stand is available'})
 
