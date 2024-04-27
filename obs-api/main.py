@@ -273,6 +273,7 @@ async def delete_groups_obs(request_body: DeleteGroupObs):
 @app.get('/check_obs')
 async def check_obs(request_body: CheckObs):
     added_obs = await conductor.get_users_obs(request_body.user_id)
+    logger.info(f'ADDED OBS:\n {added_obs}')
     need_availability = request_body.need_availability
     resp = dict()  # словарь {'имя обс': {параметры}, 'имя обс-2': {параметры-2}, ...}
     for obs in added_obs:
