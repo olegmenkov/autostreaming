@@ -100,7 +100,7 @@ async def send_data_to_calendar(message, state):
     #         "password_obs": stream_data['password']}}
     url = "https://crm.miem.tv/telegram/calendar/create"
     response = requests.post(url, json = stream_data)
-    logger.info(f'Sent {str(params)} and received {str(response.status_code)}')
+    # logger.info(f'Sent {str(params)} and received {str(response.status_code)}')
 
     if response.status_code == 200:
         data = response.json()['result']
@@ -184,7 +184,7 @@ async def show_scenes_keyboard(obs_name, message, state):
             await message.answer('Выберите сцену:', reply_markup=keyboard)
             logger.info('Formed a keyboard, asked to choose a scene')
 
-    elif response.status_code == 409:
+    elif response.status_code == 503:
         await message.answer(
             """Данный стенд с OBS сейчас недоступен. Вы можете попробовать выбрать другой стенд с OBS из доступных.
 Их список вы можете посмотреть командой /check_obs.""",  reply_markup=types.ReplyKeyboardRemove())
@@ -687,9 +687,9 @@ async def process_select_server_key(message: Message, state: FSMContext, bot: Bo
             if 'in use' in str(response.content):
                 await message.answer(
                     "Данный стенд сейчас занят. Вы можете выбрать другой. Список доступных стендов можете посмотреть командой /check_obs")
-            elif 'unavailable' in str(response.content):
-                await message.answer(
-                    """Данный стенд с OBS сейчас недоступен. Вы можете попробовать выбрать другой стенд с OBS из доступных.
+        elif response.status_code == 503:
+            await message.answer(
+                """Данный стенд с OBS сейчас недоступен. Вы можете попробовать выбрать другой стенд с OBS из доступных.
 Их список вы можете посмотреть командой /check_obs.""",  reply_markup=types.ReplyKeyboardRemove())
         else:
             await message.answer("""Произошла ошибка.
@@ -734,10 +734,7 @@ async def process_start_recording(message: Message, state: FSMContext, bot: Bot)
             await message.answer(
                 "Данный стенд сейчас занят. Вы можете выбрать другой. Список доступных стендов можете посмотреть командой /check_obs",
                 reply_markup=types.ReplyKeyboardRemove())
-        elif 'unavailable' in str(response.content):
-            await message.answer(
-                """Данный стенд с OBS сейчас недоступен. Вы можете попробовать выбрать другой стенд с OBS из доступных.
-Их список вы можете посмотреть командой /check_obs.""",  reply_markup=types.ReplyKeyboardRemove())
+
     else:
         await message.answer("""Произошла ошибка.
 Вы можете попробовать выбрать другой стенд с OBS из доступных. Их список вы можете посмотреть командой /check_obs
@@ -782,10 +779,10 @@ async def process_stop_recording_confirmed(message: Message, state: FSMContext, 
             if 'not running' in str(response.content):
                 await message.answer(
                     "На этом OBS запись не идёт", reply_markup=types.ReplyKeyboardRemove())
-            elif 'unavailable' in str(response.content):
-                await message.answer(
-                    """Данный стенд с OBS сейчас недоступен. Вы можете попробовать выбрать другой стенд с OBS из доступных.
-Их список вы можете посмотреть командой /check_obs.""",  reply_markup=types.ReplyKeyboardRemove())
+        elif response.status_code == 503:
+            await message.answer(
+                """Данный стенд с OBS сейчас недоступен. Вы можете попробовать выбрать другой стенд с OBS из доступных.
+Их список вы можете посмотреть командой /check_obs.""", reply_markup=types.ReplyKeyboardRemove())
         else:
             await message.answer("""Произошла ошибка.
 Вы можете попробовать выбрать другой стенд с OBS из доступных. Их список вы можете посмотреть командой /check_obs
@@ -959,10 +956,10 @@ async def process_stop_stream_confirmed(message: Message, state: FSMContext, bot
             if 'not running' in str(response.content):
                 await message.answer(
                     "На данном OBS стрим не идёт", reply_markup=types.ReplyKeyboardRemove())
-            elif 'unavailable' in str(response.content):
-                await message.answer(
-                    """Данный стенд с OBS сейчас недоступен. Вы можете попробовать выбрать другой стенд с OBS из доступных.
-    Их список вы можете посмотреть командой /check_obs.""",  reply_markup=types.ReplyKeyboardRemove())
+        elif response.status_code == 503:
+            await message.answer(
+                """Данный стенд с OBS сейчас недоступен. Вы можете попробовать выбрать другой стенд с OBS из доступных.
+Их список вы можете посмотреть командой /check_obs.""", reply_markup=types.ReplyKeyboardRemove())
 
         else:
             await message.answer("""Произошла ошибка.
@@ -996,7 +993,7 @@ async def process_get_scenes(message: types.Message, state: FSMContext):
             await message.answer(
                 f"""Сейчас в OBS есть следующие сцены: {str(data["all"])[1:-1]}.
 Текущая сцена в Program: {data["current"]}.""", reply_markup=types.ReplyKeyboardRemove())
-    elif response.status_code == 409:
+    elif response.status_code == 503:
         await message.answer(
             """Данный стенд с OBS сейчас недоступен. Вы можете попробовать выбрать другой стенд с OBS из доступных.
 Их список вы можете посмотреть командой /check_obs.""",  reply_markup=types.ReplyKeyboardRemove())
@@ -1043,7 +1040,7 @@ async def process_select_scene(message: Message, state: FSMContext) -> None:
 
     if response.status_code == 200:
         await message.answer(f'Установлена текущая сцена {scene_name}', reply_markup=types.ReplyKeyboardRemove())
-    elif response.status_code == 409:
+    elif response.status_code == 503:
         await message.answer(
             """Данный стенд с OBS сейчас недоступен. Вы можете попробовать выбрать другой стенд с OBS из доступных.
 Их список вы можете посмотреть командой /check_obs.""",  reply_markup=types.ReplyKeyboardRemove())
@@ -1079,7 +1076,7 @@ async def process_ping_obs(message: Message, state: FSMContext) -> None:
     elif response.status_code == 404:
         await message.answer('Стенд с таким именем не найден. Пожалуйста, проверьте правильность написания.',
                              reply_markup=types.ReplyKeyboardRemove())
-    elif response.status_code == 451:
+    elif response.status_code == 503:
         await message.answer('Сейчас данный стенд недоступен.', reply_markup=types.ReplyKeyboardRemove())
     else:
         await message.answer("""Произошла ошибка.
@@ -1116,7 +1113,7 @@ async def process_ping_stream(message: Message, state: FSMContext) -> None:
                              reply_markup=types.ReplyKeyboardRemove())
     elif response.status_code == 451:
         await message.answer('На выбранном стенде с OBS стрим не идёт.', reply_markup=types.ReplyKeyboardRemove())
-    elif response.status_code == 409:
+    elif response.status_code == 503:
         await message.answer(
             """Данный стенд с OBS сейчас недоступен. Вы можете попробовать выбрать другой стенд с OBS из доступных.
 Их список вы можете посмотреть командой /check_obs.""",  reply_markup=types.ReplyKeyboardRemove())
@@ -1152,7 +1149,7 @@ async def process_ping_recording(message: Message, state: FSMContext) -> None:
                              reply_markup=types.ReplyKeyboardRemove())
     elif response.status_code == 451:
         await message.answer('На выбранном стенде с OBS запись не идёт.', reply_markup=types.ReplyKeyboardRemove())
-    elif response.status_code == 409:
+    elif response.status_code == 503:
         await message.answer(
             """Данный стенд с OBS сейчас недоступен. Вы можете попробовать выбрать другой стенд с OBS из доступных.
 Их список вы можете посмотреть командой /check_obs.""",  reply_markup=types.ReplyKeyboardRemove())
