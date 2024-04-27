@@ -68,9 +68,9 @@ async def start_stream(request_body: StartStreamModel):
     if resp["error"]:
         return JSONResponse(status_code=503, content=resp["error"])
 
-    if not resp["data"]:
+    if resp["data"]:
         return JSONResponse(status_code=409,
-                            content={'response': "Stream not running"})
+                            content={'response': "This stand is currently in use"})
 
     resp = await set_stream_parameters(ip, port, password, request_body.key, request_body.youtube_server)
 
