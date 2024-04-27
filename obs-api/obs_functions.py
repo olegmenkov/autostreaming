@@ -51,7 +51,7 @@ async def run_obsws_request(obs_name: str, password: str, request: str, data: di
 
     publish(mqtt_client, MQTT_REQUEST_TOPIC + "/" + obs_name, req)
     time_counter = 0
-    while not RESPONSE and time_counter < 120:
+    while not RESPONSE and time_counter < 40:
         await asyncio.sleep(0.1)
         time_counter += 1
 

@@ -65,10 +65,10 @@ async def start_stream(request_body: StartStreamModel):
 
     resp = await ping_stream(ip, port, password)
 
-    if "error" in resp:
+    if resp["error"]:
         return JSONResponse(status_code=503, content=resp["error"])
 
-    if not resp:
+    if not resp["data"]:
         return JSONResponse(status_code=409,
                             content={'response': "Stream not running"})
 
@@ -141,11 +141,11 @@ async def start_recording_handler(request_body: StartRecordingModel):
     if resp["error"]:
         return JSONResponse(status_code=503, content=resp["error"])
 
-    if not resp["data"]:
+    if resp["data"]:
         return JSONResponse(status_code=409,
                             content='Obs stand with this ip currently in use')
 
-    resp = await stop_recording(ip, port, password)
+    resp = await start_recording(ip, port, password)
 
     if resp["error"]:
         return JSONResponse(status_code=503, content=resp["error"])
