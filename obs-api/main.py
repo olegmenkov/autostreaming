@@ -284,6 +284,7 @@ async def check_obs(request_body: CheckObs):
             resp = await ping_obs(ip, port, password)
             logger.info(f"RESP: {resp}")
             if not resp["error"]:
+                logger.info(f"not resp['error']: {resp}")
                 stream_resp = await ping_stream(ip, port, password)
 
                 if not stream_resp["error"] and stream_resp["data"]:
