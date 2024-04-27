@@ -281,10 +281,8 @@ async def check_obs(request_body: CheckObs):
         port = obs[2]
         ip, port, password = await conductor.get_obs_info(request_body.user_id, name)
         if need_availability:  # для доступных ОБС также смотрим, идёт ли на них стрим и запись
-            resp = await ping_obs(ip, port, password)
-            logger.info(f"RESP: {resp}")
-            if not resp["error"]:
-                logger.info(f"not resp['error']: {resp}")
+            response_ping = await ping_obs(ip, port, password)
+            if not response_ping["error"]:
                 stream_resp = await ping_stream(ip, port, password)
 
                 if not stream_resp["error"] and stream_resp["data"]:
