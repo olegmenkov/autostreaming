@@ -178,7 +178,7 @@ async def stop_recording_handler(request_body: StopRecordingModel):
 
     if not resp["data"]:
         return JSONResponse(status_code=409,
-                            content='Obs stand with this ip currently in use')
+                            content='Stream is not running')
 
     resp = await stop_recording(ip, port, password)
 
