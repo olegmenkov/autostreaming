@@ -273,7 +273,6 @@ async def delete_groups_obs(request_body: DeleteGroupObs):
 @app.get('/check_obs')
 async def check_obs(request_body: CheckObs):
     added_obs = await conductor.get_users_obs(request_body.user_id)
-    logger.info(f'ADDED OBS:\n {added_obs}')
     need_availability = request_body.need_availability
     resp = dict()  # словарь {'имя обс': {параметры}, 'имя обс-2': {параметры-2}, ...}
     for obs in added_obs:
@@ -283,7 +282,7 @@ async def check_obs(request_body: CheckObs):
         ip, port, password = await conductor.get_obs_info(request_body.user_id, name)
         if need_availability:  # для доступных ОБС также смотрим, идёт ли на них стрим и запись
             resp = await ping_obs(ip, port, password)
-
+            logger.info(f"RESP: {resp}")
             if not resp["error"]:
                 stream_resp = await ping_stream(ip, port, password)
 
