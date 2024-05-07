@@ -9,7 +9,7 @@ from db_class import Database
 from obs_functions import start_youtube_stream, set_stream_parameters, start_recording
 from obs_functions import stop_youtube_stream, ping_stream, stream_time, ping_recording, \
     recording_time, stop_recording, ping_obs, get_scenes, set_scene
-from schemas import UserId, CalendarData, CalendarDataStop
+from schemas import UserId, CalendarData, CalendarDataStop, ObsIpPort
 from schemas import UsersAddObs, UserDelObs, UsersEditObs, CheckObs, StartStreamModel, \
     StopStreamModel, StartRecordingModel, StopRecordingModel, UserPingStreamObs, PlanStreamModel, UserObs, \
     GetScenesModel, SetSceneModel, AddGroup, AddGroupMember, DeleteGroupMember, AddGroupObs, \
@@ -324,6 +324,12 @@ async def check_group_obs(request_body: CheckGroupObs):
 async def check_obs_group(request_body: CheckObsGroups):
     ip, port, password = await db.get_obs_info(request_body.user_id, request_body.obs_name)
     groups = await db.find_obs_groups(ip, port)
+    return JSONResponse(content=groups)
+
+
+@app.get('/check_obs_groups_notifications')
+async def check_obs_group(request_body: ObsIpPort):
+    groups = await db.find_obs_groups_with_names(request_body.ip, request_body.port)
     return JSONResponse(content=groups)
 
 

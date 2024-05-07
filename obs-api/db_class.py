@@ -123,6 +123,16 @@ class Database:
         rows = result.fetchall()
         return [row[0] for row in rows]
 
+    async def find_obs_groups_with_names(self, ip: str, port: str):
+        query = text("""
+            SELECT group_id, GO_name 
+            FROM groups_obs WHERE "OBS_id" = (
+                SELECT "OBS_id" from obs WHERE "OBS_ip" = :ip AND "OBS_port" = :port LIMIT 1);
+        """)
+        result = await self.execute(query, {'ip': ip, 'port': int(port)})
+        rows = result.fetchall()
+        return [{'group_id': row[0], 'obs_name': row[1]} for row in rows]
+
     async def add_users_obs(self, user_id: str, obs_name: str, ip: str, port: str, encrypted_password: str):
         # Check for duplicates
         check_query = text("""
