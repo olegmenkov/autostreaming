@@ -63,7 +63,7 @@ async def send_error_notifications(bot: Bot, mqtt_client):
                     group_id, obs_name = record["group_id"], record["obs_name"]
                     text = f"{emoji.emojize(':warning:')} В OBS {obs_name} обнаружены проблемы. {enter}"
                     for scene_name in errors:
-                        text += f"В сцене {scene_name}: {', '.join(errors[scene_name])}"
+                        text += f"В сцене {scene_name}: {', '.join(errors[scene_name])}. {enter}"
                     try:
                         await bot.send_message(group_id, text)
                     except Exception as err:
