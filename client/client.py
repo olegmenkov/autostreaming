@@ -327,7 +327,7 @@ def publish_ping(client, topic):
                 }
     }
     '''
-    result = client.publish(topic, msg)
+    result = client.publish(topic, msg, qos=2)
     status = result[0]
 
     if status:
