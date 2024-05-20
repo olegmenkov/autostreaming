@@ -4,3 +4,4 @@ uuid
 loguru==0.6.0
 python-dotenv==1.0.0
 emoji
+paho-mqtt==1.6.1
