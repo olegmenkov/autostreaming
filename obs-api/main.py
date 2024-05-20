@@ -13,7 +13,7 @@ from schemas import UserId, CalendarData, CalendarDataStop, ObsIpPort
 from schemas import UsersAddObs, UserDelObs, UsersEditObs, CheckObs, StartStreamModel, \
     StopStreamModel, StartRecordingModel, StopRecordingModel, UserPingStreamObs, PlanStreamModel, UserObs, \
     GetScenesModel, SetSceneModel, AddGroup, AddGroupMember, DeleteGroupMember, AddGroupObs, \
-    EditGroupObs, DeleteGroupObs, CheckGroupObs, CheckObsGroups, ClientState, IpChange
+    EditGroupObs, DeleteGroupObs, CheckGroupObs, CheckObsGroups
 from utils import config_obsclient_calendar, DB_CONFIG
 
 from fastapi import FastAPI

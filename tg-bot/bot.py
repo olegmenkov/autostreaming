@@ -1,18 +1,13 @@
 import json
 import os
 import asyncio
-import time
-
 import emoji
 import paho.mqtt.client as mqtt
 import requests
-
 from aiogram import Bot, Dispatcher
 from aiogram.types import bot_command_scope_all_private_chats, bot_command_scope_all_chat_administrators
-from cffi.model import global_lock
 from dotenv import load_dotenv
 from loguru import logger
-
 import commands
 import private_handlers, group_handlers
 from private_handlers import enter
