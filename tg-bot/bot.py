@@ -12,12 +12,11 @@ import commands
 import private_handlers, group_handlers
 from private_handlers import enter
 
+global MQTT_PING_TOPIC
 
 load_dotenv()
 BOT_TOKEN = os.getenv('BOT_TOKEN')
 bot = Bot(token=BOT_TOKEN)
-
-DATA = None
 
 
 async def send_error_notifications(bot: Bot, data: dict):
@@ -49,7 +48,7 @@ async def send_error_notifications(bot: Bot, data: dict):
 
 def on_connect(client, userdata, flags, rc):
     print("Connected with result code "+str(rc))
-    client.subscribe("autostream/ping_sources")
+    client.subscribe(MQTT_PING_TOPIC)
 
 
 # callback на появление сообщения в topic
@@ -71,6 +70,8 @@ def on_message(client, userdata, msg):
 
 
 async def main():
+    global MQTT_PING_TOPIC
+
     # logging.basicConfig(level=logging.INFO, stream=sys.stdout)
     # Dispatcher is a root router
     dp = Dispatcher()
@@ -92,21 +93,24 @@ async def main():
                                                                     # 'caption',
                                                                     'chat_member'])
 
-    topic = "autostream/ping_sources"
     client = mqtt.Client()
     client.on_connect = on_connect
     client.on_message = on_message
 
     # имя и пароль хранятся в локальных переменных!
-    load_dotenv()
-    USERNAME = os.getenv("NAME")
-    PASSWORD = os.getenv("PASSWORD")
+    load_dotenv("../.env")
+    # MQTT broker configuration
+    MQTT_BROKER_HOST = os.getenv("MQTT_BROKER_HOST")
+    MQTT_BROKER_PORT = int(os.getenv("MQTT_BROKER_PORT"))
+    MQTT_USER = os.getenv("MQTT_USERNAME")
+    MQTT_PASSWORD = os.getenv("MQTT_PASSWORD")
+    MQTT_PING_TOPIC = os.getenv("MQTT_PING_TOPIC")
 
-    client.username_pw_set(USERNAME, PASSWORD)
+    client.username_pw_set(MQTT_USER, MQTT_PASSWORD)
 
     # connect_async to allow background processing
-    client.connect_async("172.18.130.40", 1883, 60)
-    client.loop_start()
+    client.connect_async(MQTT_BROKER_HOST, MQTT_BROKER_PORT, 60)
+    client.loop_forever()
 
 
 if __name__ == '__main__':
