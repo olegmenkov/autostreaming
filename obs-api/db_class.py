@@ -125,7 +125,7 @@ class Database:
 
     async def find_obs_groups_with_names(self, ip: str, port: str):
         query = text("""
-            SELECT group_id, GO_name 
+            SELECT group_id, go_name 
             FROM groups_obs WHERE "OBS_id" = (
                 SELECT "OBS_id" from obs WHERE "OBS_ip" = :ip AND "OBS_port" = :port LIMIT 1);
         """)
