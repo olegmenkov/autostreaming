@@ -12,9 +12,7 @@ import commands
 import private_handlers, group_handlers
 from private_handlers import enter
 
-global MQTT_PING_TOPIC
-
-load_dotenv()
+load_dotenv("../.env")
 BOT_TOKEN = os.getenv('BOT_TOKEN')
 bot = Bot(token=BOT_TOKEN)
 
@@ -47,7 +45,7 @@ async def send_error_notifications(bot: Bot, data: dict):
 
 
 def on_connect(client, userdata, flags, rc):
-    print("Connected with result code "+str(rc))
+    logger.info("Connected with result code "+str(rc))
     client.subscribe(MQTT_PING_TOPIC)
 
 
@@ -65,13 +63,12 @@ def on_message(client, userdata, msg):
     '''
     data = json.loads(msg.payload)
     logger.info(data)
+
     loop = asyncio.new_event_loop()
     loop.run_until_complete(send_error_notifications(bot, data))
 
 
 async def main():
-    global MQTT_PING_TOPIC
-
     # logging.basicConfig(level=logging.INFO, stream=sys.stdout)
     # Dispatcher is a root router
     dp = Dispatcher()
@@ -93,12 +90,13 @@ async def main():
                                                                     # 'caption',
                                                                     'chat_member'])
 
+
+if __name__ == '__main__':
     client = mqtt.Client()
     client.on_connect = on_connect
     client.on_message = on_message
 
     # имя и пароль хранятся в локальных переменных!
-    load_dotenv("../.env")
     # MQTT broker configuration
     MQTT_BROKER_HOST = os.getenv("MQTT_BROKER_HOST")
     MQTT_BROKER_PORT = int(os.getenv("MQTT_BROKER_PORT"))
@@ -111,7 +109,4 @@ async def main():
     # connect_async to allow background processing
     client.connect_async(MQTT_BROKER_HOST, MQTT_BROKER_PORT, 60)
     client.loop_forever()
-
-
-if __name__ == '__main__':
     asyncio.run(main())
