@@ -99,6 +99,8 @@ async def main():
 
 
 if __name__ == '__main__':
+    asyncio.run(main())
+
     client = mqtt.Client()
     client.on_connect = on_connect
     client.on_message = on_message
@@ -109,5 +111,4 @@ if __name__ == '__main__':
 
     # connect_async to allow background processing
     client.connect(MQTT_BROKER_HOST, MQTT_BROKER_PORT, 60)
-    client.loop_start()
-    asyncio.run(main())
+    client.loop_forever()
