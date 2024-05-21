@@ -14,6 +14,13 @@ from private_handlers import enter
 
 load_dotenv("../.env")
 BOT_TOKEN = os.getenv('BOT_TOKEN')
+
+MQTT_BROKER_HOST = os.getenv("MQTT_BROKER_HOST")
+MQTT_BROKER_PORT = int(os.getenv("MQTT_BROKER_PORT"))
+MQTT_USER = os.getenv("MQTT_USERNAME")
+MQTT_PASSWORD = os.getenv("MQTT_PASSWORD")
+MQTT_PING_TOPIC = os.getenv("MQTT_PING_TOPIC")
+
 bot = Bot(token=BOT_TOKEN)
 
 
@@ -98,12 +105,6 @@ if __name__ == '__main__':
 
     # имя и пароль хранятся в локальных переменных!
     # MQTT broker configuration
-    MQTT_BROKER_HOST = os.getenv("MQTT_BROKER_HOST")
-    MQTT_BROKER_PORT = int(os.getenv("MQTT_BROKER_PORT"))
-    MQTT_USER = os.getenv("MQTT_USERNAME")
-    MQTT_PASSWORD = os.getenv("MQTT_PASSWORD")
-    MQTT_PING_TOPIC = os.getenv("MQTT_PING_TOPIC")
-
     client.username_pw_set(MQTT_USER, MQTT_PASSWORD)
 
     # connect_async to allow background processing
