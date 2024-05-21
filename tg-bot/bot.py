@@ -77,6 +77,7 @@ async def send_error_notifications(bot: Bot, data: dict):
             await bot.send_message(group_id, text)
         except Exception as err:
             logger.debug(f'The message to the group {group_id} has not been sent.')
+            logger.error(err)
 
 
 async def main():
