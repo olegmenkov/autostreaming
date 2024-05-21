@@ -14,8 +14,10 @@ from private_handlers import enter
 
 
 load_dotenv()
+
 BOT_TOKEN = os.getenv('BOT_TOKEN')
 bot = Bot(token=BOT_TOKEN)
+
 # MQTT broker configuration
 MQTT_BROKER_HOST = os.getenv("MQTT_BROKER_HOST")
 MQTT_BROKER_PORT = int(os.getenv("MQTT_BROKER_PORT"))
@@ -25,6 +27,7 @@ MQTT_PING_TOPIC = os.getenv("MQTT_PING_TOPIC")
 # Define MQTT client
 mqtt_client = mqtt.Client()
 mqtt_client.username_pw_set(MQTT_USER, MQTT_PASSWORD)
+
 global_loop = asyncio.new_event_loop()
 
 
@@ -44,10 +47,8 @@ def on_message(client, userdata, msg):
     obs_name = obsws_host:obsws_port
     Пример: 172.45.55.34:4455
     '''
-    logger.info("GOT MESSAGE")
-    data = json.loads(msg.payload)
-    logger.info(data)
 
+    data = json.loads(msg.payload)
     asyncio.run_coroutine_threadsafe(send_error_notifications(data), global_loop)
 
 
@@ -59,30 +60,32 @@ async def send_error_notifications(data: dict):
         "fails": {scene_name:[failed_source_name, ...], ...}
     }
     '''
+
     obs_name = data["obs_name"]
     ip, port = obs_name.split(':')
     body = {"ip": ip, "port": port}
     url = 'http://127.0.0.1:8000/check_obs_groups_notifications'
     response = requests.get(url, data=json.dumps(body))
-    logger.info(response)
-    groups = response.json()
-    logger.info(groups)
+    if response.status_code == 200:
+        groups = response.json()
+        logger.info(groups)
 
-    for record in groups:
-        group_id, obs_name = record["group_id"], record["obs_name"]
-        text = f"{emoji.emojize(':warning:')} В OBS {obs_name} обнаружены проблемы. {enter}"
-        for scene_name in data["fails"]:
-            text += f"В сцене {scene_name}: {', '.join(data['fails'][scene_name])}. {enter}"
+        for record in groups:
+            group_id, obs_name = record["group_id"], record["obs_name"]
+            text = f"{emoji.emojize(':warning:')} В OBS {obs_name} обнаружены проблемы. {enter}"
+            for scene_name in data["fails"]:
+                text += f"В сцене {scene_name}: {', '.join(data['fails'][scene_name])}. {enter}"
 
-        try:
-            await bot.send_message(group_id, text)
-        except Exception as err:
-            logger.debug(f'The message to the group {group_id} has not been sent.')
-            logger.error(err)
+            try:
+                await bot.send_message(group_id, text)
+            except Exception as err:
+                logger.debug(f'The message to the group {group_id} has not been sent.')
+                logger.error(f'Error:{err}')
+    else:
+        logger.error(response)
 
 
 async def main():
-    logger.info("RUN MAIN")
     # logging.basicConfig(level=logging.INFO, stream=sys.stdout)
     # Dispatcher is a root router
     dp = Dispatcher()
