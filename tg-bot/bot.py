@@ -13,9 +13,23 @@ from loguru import logger
 # from private_handlers import enter
 
 
+load_dotenv()
+# BOT_TOKEN = os.getenv('BOT_TOKEN')
+# bot = Bot(token=BOT_TOKEN)
+# MQTT broker configuration
+MQTT_BROKER_HOST = os.getenv("MQTT_BROKER_HOST")
+MQTT_BROKER_PORT = int(os.getenv("MQTT_BROKER_PORT"))
+MQTT_USER = os.getenv("MQTT_USERNAME")
+MQTT_PASSWORD = os.getenv("MQTT_PASSWORD")
+MQTT_PING_TOPIC = os.getenv("MQTT_PING_TOPIC")
+# Define MQTT client
+mqtt_client = mqtt.Client()
+mqtt_client.username_pw_set(MQTT_USER, MQTT_PASSWORD)
+
+
 def on_connect(client, userdata, flags, rc):
     logger.info("Connected with result code "+str(rc))
-    client.subscribe("autostream/ping_sources")
+    client.subscribe(MQTT_PING_TOPIC)
 
 
 def on_message(client, userdata, msg):
@@ -93,19 +107,7 @@ def on_message(client, userdata, msg):
 
 if __name__ == '__main__':
     # asyncio.run(main())
-# Connect to MQTT broker
-    load_dotenv()
-    # BOT_TOKEN = os.getenv('BOT_TOKEN')
-    # bot = Bot(token=BOT_TOKEN)
-    # MQTT broker configuration
-    MQTT_BROKER_HOST = os.getenv("MQTT_BROKER_HOST")
-    MQTT_BROKER_PORT = int(os.getenv("MQTT_BROKER_PORT"))
-    MQTT_USER = os.getenv("MQTT_USERNAME")
-    MQTT_PASSWORD = os.getenv("MQTT_PASSWORD")
-    MQTT_PING_TOPIC = os.getenv("MQTT_PING_TOPIC")
-    # Define MQTT client
-    mqtt_client = mqtt.Client()
-    mqtt_client.username_pw_set(MQTT_USER, MQTT_PASSWORD)
+    # Connect to MQTT broker
     mqtt_client.on_connect = on_connect
     mqtt_client.on_message = on_message
     mqtt_client.connect_async(MQTT_BROKER_HOST, MQTT_BROKER_PORT, 60)
