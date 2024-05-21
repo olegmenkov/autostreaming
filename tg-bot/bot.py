@@ -72,7 +72,7 @@ async def send_error_notifications(bot: Bot, data: dict):
         group_id, obs_name = record["group_id"], record["obs_name"]
         text = f"{emoji.emojize(':warning:')} В OBS {obs_name} обнаружены проблемы. {enter}"
         for scene_name in data["fails"]:
-            text += f"В сцене {scene_name}: {', '.join(data[scene_name])}. {enter}"
+            text += f"В сцене {scene_name}: {', '.join(data['fails'][scene_name])}. {enter}"
         try:
             await bot.send_message(group_id, text)
         except Exception as err:
