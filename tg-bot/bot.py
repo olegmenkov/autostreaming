@@ -64,6 +64,7 @@ async def send_error_notifications(bot: Bot, data: dict):
     body = {"ip": ip, "port": port}
     url = 'http://127.0.0.1:8000/check_obs_groups_notifications'
     response = requests.get(url, data=json.dumps(body))
+    logger.info(response)
     groups = response.json()
     logger.info(groups)
 
@@ -76,7 +77,6 @@ async def send_error_notifications(bot: Bot, data: dict):
             await bot.send_message(group_id, text)
         except Exception as err:
             logger.debug(f'The message to the group {group_id} has not been sent.')
-
 
 
 async def main():
