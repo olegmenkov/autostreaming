@@ -103,12 +103,10 @@ def on_message(client, userdata, msg):
 #                                                                     # 'caption',
 #                                                                     'chat_member'])
 
-
-# if __name__ == '__main__':
-    # asyncio.run(main())
 mqtt_client.on_connect = on_connect
 mqtt_client.on_message = on_message
-
+if __name__ == '__main__':
+    # asyncio.run(main())
 # Connect to MQTT broker
-mqtt_client.connect_async(MQTT_BROKER_HOST, MQTT_BROKER_PORT, 60)
+    mqtt_client.connect_async(MQTT_BROKER_HOST, MQTT_BROKER_PORT, 60)
 
