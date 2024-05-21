@@ -68,14 +68,16 @@ def on_message(client, userdata, msg):
     obs_name = obsws_host:obsws_port
     Пример: 172.45.55.34:4455
     '''
+    logger.info("GOT MESSAGE")
     data = json.loads(msg.payload)
     logger.info(data)
 
-    loop = asyncio.new_event_loop()
-    loop.run_until_complete(send_error_notifications(bot, data))
+    # loop = asyncio.new_event_loop()
+    # loop.run_until_complete(send_error_notifications(bot, data))
 
 
 async def main():
+    logger.info("RUN MAIN")
     # logging.basicConfig(level=logging.INFO, stream=sys.stdout)
     # Dispatcher is a root router
     dp = Dispatcher()
@@ -99,7 +101,7 @@ async def main():
 
 
 if __name__ == '__main__':
-    asyncio.run(main())
+    # asyncio.run(main())
 
     client = mqtt.Client()
     client.on_connect = on_connect
