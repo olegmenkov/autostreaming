@@ -12,7 +12,7 @@ import commands
 import private_handlers, group_handlers
 from private_handlers import enter
 
-load_dotenv("../.env")
+load_dotenv()
 BOT_TOKEN = os.getenv('BOT_TOKEN')
 
 MQTT_BROKER_HOST = os.getenv("MQTT_BROKER_HOST")
