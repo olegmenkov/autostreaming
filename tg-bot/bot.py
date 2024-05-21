@@ -108,6 +108,6 @@ if __name__ == '__main__':
     client.username_pw_set(MQTT_USER, MQTT_PASSWORD)
 
     # connect_async to allow background processing
-    client.connect_async(MQTT_BROKER_HOST, MQTT_BROKER_PORT, 60)
-    client.loop_forever()
+    client.connect(MQTT_BROKER_HOST, MQTT_BROKER_PORT, 60)
+    client.loop_start()
     asyncio.run(main())
