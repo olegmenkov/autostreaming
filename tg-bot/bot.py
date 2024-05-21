@@ -15,7 +15,6 @@ from private_handlers import enter
 
 load_dotenv()
 BOT_TOKEN = os.getenv('BOT_TOKEN')
-bot = Bot(token=BOT_TOKEN)
 # MQTT broker configuration
 MQTT_BROKER_HOST = os.getenv("MQTT_BROKER_HOST")
 MQTT_BROKER_PORT = int(os.getenv("MQTT_BROKER_PORT"))
@@ -48,10 +47,10 @@ def on_message(client, userdata, msg):
     logger.info(data)
 
     loop = asyncio.new_event_loop()
-    loop.run_until_complete(send_error_notifications(bot, data))
+    loop.run_until_complete(send_error_notifications(data))
 
 
-async def send_error_notifications(bot: Bot, data: dict):
+async def send_error_notifications(data: dict):
     '''
     data
     {
@@ -73,6 +72,7 @@ async def send_error_notifications(bot: Bot, data: dict):
         text = f"{emoji.emojize(':warning:')} В OBS {obs_name} обнаружены проблемы. {enter}"
         for scene_name in data["fails"]:
             text += f"В сцене {scene_name}: {', '.join(data['fails'][scene_name])}. {enter}"
+
         try:
             await bot.send_message(group_id, text)
         except Exception as err:
@@ -81,7 +81,9 @@ async def send_error_notifications(bot: Bot, data: dict):
 
 
 async def main():
+    global bot
     logger.info("RUN MAIN")
+    bot = Bot(token=BOT_TOKEN)
     # logging.basicConfig(level=logging.INFO, stream=sys.stdout)
     # Dispatcher is a root router
     dp = Dispatcher()
