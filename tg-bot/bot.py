@@ -1,16 +1,16 @@
 import json
 import os
-import asyncio
-import emoji
+# import asyncio
+# import emoji
 import paho.mqtt.client as mqtt
-import requests
-from aiogram import Bot, Dispatcher
-from aiogram.types import bot_command_scope_all_private_chats, bot_command_scope_all_chat_administrators
+# import requests
+# from aiogram import Bot, Dispatcher
+# from aiogram.types import bot_command_scope_all_private_chats, bot_command_scope_all_chat_administrators
 from dotenv import load_dotenv
 from loguru import logger
-import commands
-import private_handlers, group_handlers
-from private_handlers import enter
+# import commands
+# import private_handlers, group_handlers
+# from private_handlers import enter
 
 load_dotenv()
 # BOT_TOKEN = os.getenv('BOT_TOKEN')
