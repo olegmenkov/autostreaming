@@ -15,6 +15,7 @@ from private_handlers import enter
 
 load_dotenv()
 BOT_TOKEN = os.getenv('BOT_TOKEN')
+bot = Bot(token=BOT_TOKEN)
 # MQTT broker configuration
 MQTT_BROKER_HOST = os.getenv("MQTT_BROKER_HOST")
 MQTT_BROKER_PORT = int(os.getenv("MQTT_BROKER_PORT"))
@@ -24,6 +25,7 @@ MQTT_PING_TOPIC = os.getenv("MQTT_PING_TOPIC")
 # Define MQTT client
 mqtt_client = mqtt.Client()
 mqtt_client.username_pw_set(MQTT_USER, MQTT_PASSWORD)
+global_loop = asyncio.new_event_loop()
 
 
 def on_connect(client, userdata, flags, rc):
@@ -46,8 +48,7 @@ def on_message(client, userdata, msg):
     data = json.loads(msg.payload)
     logger.info(data)
 
-    loop = asyncio.new_event_loop()
-    loop.run_until_complete(send_error_notifications(data))
+    asyncio.run_coroutine_threadsafe(send_error_notifications(data), global_loop)
 
 
 async def send_error_notifications(data: dict):
@@ -81,9 +82,7 @@ async def send_error_notifications(data: dict):
 
 
 async def main():
-    global bot
     logger.info("RUN MAIN")
-    bot = Bot(token=BOT_TOKEN)
     # logging.basicConfig(level=logging.INFO, stream=sys.stdout)
     # Dispatcher is a root router
     dp = Dispatcher()
@@ -112,5 +111,5 @@ if __name__ == '__main__':
     mqtt_client.on_message = on_message
     mqtt_client.connect_async(MQTT_BROKER_HOST, MQTT_BROKER_PORT, 60)
     mqtt_client.loop_start()
-    asyncio.run(main())
+    global_loop.run_until_complete(main())
 
