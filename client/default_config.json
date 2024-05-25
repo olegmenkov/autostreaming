@@ -1,0 +1,18 @@
+{
+    "obs_path": "",
+    "update_loop_time": 1,
+    "obs_name": "",
+    "mqtt": {
+        "host": "0.0.0.0",
+        "port": 1883,
+        "keep_alive_time": 60,
+        "state_topic": "autostream/obs_state",
+        "ping_topic": "autostream/ping_sources",
+        "request_topic": "autostream/requests",
+        "response_topic": "autostream/responses"
+    },
+    "obsws": {
+        "host": "0.0.0.0",
+        "port": 4455
+    }
+}

@@ -1,1 +1,0 @@
-{"mqtt_broker_host": "172.18.130.40", "mqtt_broker_port": 1883, "mqtt_broker_keep_alive_time": 60, "update_loop_time": 1, "obsws_host": "localhost", "obsws_port": 4455, "obs_path": "C:\\Program Files\\obs-studio\\bin\\64bit"}
