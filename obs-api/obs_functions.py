@@ -6,17 +6,19 @@ import paho.mqtt.client as mqtt
 from dotenv import load_dotenv
 from os import getenv
 
-
+# get all creds for mqtt
 load_dotenv("../.env")
-# MQTT broker configuration
 MQTT_BROKER_HOST = getenv("MQTT_BROKER_HOST")
 MQTT_BROKER_PORT = int(getenv("MQTT_BROKER_PORT"))
 MQTT_USER = getenv("MQTT_USERNAME")
 MQTT_PASSWORD = getenv("MQTT_PASSWORD")
 MQTT_REQUEST_TOPIC = getenv("MQTT_REQUEST_TOPIC")
 MQTT_RESPONSE_TOPIC = getenv("MQTT_RESPONSE_TOPIC")
+# RESPONSE - transit variable for moving data out of mqtt back-tread
 RESPONSE = None
+# OBS_NAME - transit variable for moving data into mqtt back-tread
 OBS_NAME = ""
+# global_lock - main locker for handle access race for transit variables RESPONSE and OBS_NAME
 global_lock = asyncio.Lock()
 
 # Define MQTT client
@@ -25,21 +27,31 @@ mqtt_client.username_pw_set(MQTT_USER, MQTT_PASSWORD)
 
 
 async def run_obsws_request(obs_name: str, password: str, request: str, data: dict = None) -> dict:
-    '''
-    request form {
-        request = "GetVersion",
-        data = None
-        password = "xxx"
+    """
+    Send request to mqtt special request topic and wait for response
+    request
+    {
+        "request": str (like "GetVersion"),
+        "data": dict (like {"scene": scene_name})
+        "password" = str
     }
 
-    response form {
-        data = {...} / None,
-        error = None / "error description"
+    :param obs_name: name of obs that will execute request (like "172.32.4.20:4455")
+    :param password: obsws password
+    :param request: obsws request (like 'GetVersion')
+    :param data: obsws reques additional data (like {"scene": scene_name})
+
+    :return:
+    {
+        "data": responseData / None,
+        "error": None / "wrong password" / f"failed on remote command:{req}\nwith data:{data}"
     }
-    '''
+    """
     global RESPONSE, OBS_NAME
     mqtt_client.loop_start()
+    # wait to connect
     await asyncio.sleep(0.5)
+    # lock RESPONSE and OBS_NAME variables
     await global_lock.acquire()
     RESPONSE = None
     OBS_NAME = obs_name
@@ -48,13 +60,15 @@ async def run_obsws_request(obs_name: str, password: str, request: str, data: di
         "data": data,
         "password": password
     }
-
+    # publish request to mqtt special request topic
     publish(mqtt_client, MQTT_REQUEST_TOPIC + "/" + obs_name, req)
+    # time_counter - set time limit 4s for response
     time_counter = 0
+    # wait until response or time limit
     while not RESPONSE and time_counter < 40:
         await asyncio.sleep(0.1)
         time_counter += 1
-
+    # move information to local variable for releasing RESPONSE transit variable
     local_rep = RESPONSE
     global_lock.release()
     mqtt_client.loop_stop()
@@ -65,12 +79,24 @@ async def run_obsws_request(obs_name: str, password: str, request: str, data: di
         return {"data": None, "error": "time limit exceeded"}
 
 
-def on_connect(client, userdata, flags, rc):
+def on_connect(client: mqtt.Client, userdata, flags, rc):
+    """
+    Callback function for mqtt client, execute when try to connect to mqtt broker
+    Subscribe client to autostream response topics
+    """
     logger.info("Connected with result code "+str(rc))
     client.subscribe(MQTT_RESPONSE_TOPIC + "/#")
 
 
-def publish(client, topic, data):
+def publish(client: mqtt.Client, topic: str, data: dict):
+    """
+    Publish obsws request to mqtt broker on special request topic (like autorstreaming/request/174.32.4.28:4455)
+    :param data:{
+                    "request": str (like "GetVersion"),
+                    "data": dict (like {"scene": scene_name})
+                    "password" = str
+                }
+    """
     msg = json.dumps(data)
     result = client.publish(topic, msg, qos=1)
     status = result[0]
@@ -82,6 +108,15 @@ def publish(client, topic, data):
 
 
 def on_message(client, userdata, msg):
+    """
+    Callback function for mqtt client, execute when message published to mqtt broker subscribed topic
+    Gets obsws response and pass it in RESPONSE global variable that allows pass response out of back tread to
+    async function run_obsws_request()
+    response {
+            "obs_name": str (like 172.23.5.20:4455)
+            "fails": {scene_name:[failed_source_name, ...], ...}
+         }
+    """
     global RESPONSE
 
     resp = json.loads(msg.payload)

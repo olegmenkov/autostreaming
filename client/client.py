@@ -465,7 +465,6 @@ def publish_state(client: mqtt.Client, topic: str, obs_state: dict):
                 "time": str (like %Y.%m.%d %H:%M:%S),
                 "state": bool,
             }
-    :return:
     """
     msg = json.dumps(obs_state)
     result = client.publish(topic, msg)
@@ -500,14 +499,13 @@ def on_message(client: mqtt.Client, userdata, msg):
     """
     Callback function for mqtt client, execute when message published to mqtt broker subscribed topic
     Gets obsws requests and sends responses by publish_ws() function
-    obsws requests received in REQUEST_TOPIC related to this OBS_NAME (like autostream/172.34.5.20:4455/request)
-    obsws responses published in RESPONSE_TOPIC related to this OBS_NAME (like autostream/172.34.5.20:4455/response)
+    obsws requests received in REQUEST_TOPIC related to this OBS_NAME (like autostream/request/172.34.5.20:4455)
+    obsws responses published in RESPONSE_TOPIC related to this OBS_NAME (like autostream/response/172.34.5.20:4455)
      and commands response send in RESPONSE_TOPIC
     :param client: mqtt client
     :param userdata: ...
     :param msg: received message object
-    """
-    '''
+
     request
     {
         "request": str (like "GetVersion"),
@@ -519,7 +517,8 @@ def on_message(client: mqtt.Client, userdata, msg):
                 "obs_name": str (like 172.23.5.20:4455)
                 "fails": {scene_name:[failed_source_name, ...], ...}
              }
-    '''
+    """
+
     request = json.loads(msg.payload)
     if msg.topic == REQUEST_TOPIC + "/" + OBS_NAME:
         log.info(f"OBWSW REQUEST:{request['request']}")
